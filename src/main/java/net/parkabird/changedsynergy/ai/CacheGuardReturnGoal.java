@@ -27,7 +27,7 @@ public final class CacheGuardReturnGoal extends Goal {
     @Override
     public boolean canUse() {
         if (!(guard.level() instanceof ServerLevel)
-                || PlayerOutpostService.assigned(guard)
+                || PlayerOutpostService.hasAssignment(guard)
                 || guard.getTarget() != null
                 || guard.isNoAi()
                 || CreatureLifeMemory.role(guard)
@@ -44,7 +44,7 @@ public final class CacheGuardReturnGoal extends Goal {
     public boolean canContinueToUse() {
         return guard.isAlive()
                 && guard.getTarget() == null
-                && !PlayerOutpostService.assigned(guard)
+                && !PlayerOutpostService.hasAssignment(guard)
                 && !guard.isNoAi()
                 && CreatureCacheGuardService.assignment(guard)
                         .filter(Assignment::defenseCompleted)
@@ -74,8 +74,7 @@ public final class CacheGuardReturnGoal extends Goal {
         }
         if (--repathTicks <= 0) {
             repathTicks = 18;
-            guard.getNavigation().moveTo(
-                    post.x, post.y, post.z, RETURN_SPEED);
+            CreatureTaskNavigation.moveTo(guard, assignment.post(), 1, RETURN_SPEED);
         }
     }
 

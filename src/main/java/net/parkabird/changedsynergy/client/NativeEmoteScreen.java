@@ -40,7 +40,7 @@ public final class NativeEmoteScreen extends AbstractRadialScreen<NativeEmoteScr
         boolean selected=RadialWheelAnimations.isSectionSelected(this,section,mouseX,mouseY);
         ResourceLocation texture=Changed.modResource("textures/gui/radial/goo"+(selected?"_selected/":"/")+section+".png");
         graphics.setColor(red,green,blue,RadialWheelAnimations.layerAlpha(this));
-        graphics.blit(texture,(int)x-32+leftPos,(int)y-32+topPos,0,0,64,64,64,64);
+        RadialWheelAnimations.drawFrame(this,graphics,texture,(int)x-32+leftPos,(int)y-32+topPos,0,0,64,64,64,64);
         graphics.setColor(1,1,1,1);
     }
     @Override public void renderSectionForeground(GuiGraphics graphics,int section,double x,double y,float partial,int mouseX,int mouseY,float red,float green,float blue,float alpha) {

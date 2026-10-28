@@ -30,7 +30,7 @@ def main():
     parser.add_argument('--extra-mod', type=Path, action='append', default=[])
     parser.add_argument('--fixture', type=Path)
     parser.add_argument('--run-directory', type=Path)
-    parser.add_argument('--suite', choices=['tt', 'camp', 'social', 'settings', 'community', 'crew-load', 'community-load', 'protection', 'pets', 'negotiation'], default='tt')
+    parser.add_argument('--suite', choices=['tt', 'camp', 'social', 'settings', 'community', 'crew-load', 'community-load', 'protection', 'pets', 'negotiation', 'village', 'kin', 'navigation', 'peer', 'guns', 'swordfish'], default='tt')
     parser.add_argument('--without-addon', action='store_true')
     parser.add_argument('--check-command-state', action='store_true')
     args = parser.parse_args()
@@ -100,6 +100,11 @@ def main():
                 'crew-load': ['-Dchanged_synergy.crewServerLoad=true'],
                 'community-load': ['-Dchanged_synergy.serverLoadCheck=true'],
                 'settings': ['-Dsettings.audit.output=' + str(repo / '.codex-tmp' / 'settings-audit')],
+                'village': ['-Dchanged_synergy.villageOnly=true'],
+                'kin': ['-Dchanged_synergy.kinOnly=true'],
+                'navigation': ['-Dchanged_synergy.navigationOnly=true'],
+                'peer': ['-Dchanged_synergy.peerOnly=true'],
+                'guns': ['-Dchanged_synergy.gunsOnly=true'],
             }.get(args.suite, [])
             process = subprocess.Popen([str(java), '-Xmx2G', '-Dfile.encoding=UTF-8', *properties, '@user_jvm_args.txt',
                 '@libraries/net/minecraftforge/forge/1.20.1-47.4.21/win_args.txt', 'nogui', '--world',
@@ -122,6 +127,12 @@ def main():
             'community-load': 'SERVER_LOAD_REGRESSION_PASS:', 'protection': 'COMPANION_PROTECTION_REGRESSION_PASS:',
             'pets': 'PET_RELATIONSHIP_REGRESSION_PASS:',
             'negotiation': 'NEGOTIATION_LIFECYCLE_REGRESSION_PASS:',
+            'village': 'VILLAGE_COEXISTENCE_REGRESSION_PASS:',
+            'kin': 'KIN_INTERVENTION_REGRESSION_PASS:',
+            'navigation': 'TRAPDOOR_NAVIGATION_REGRESSION_PASS:',
+            'peer': 'PEER_PLAY_REGRESSION_PASS:',
+            'guns': 'TACZ_SUIT_SHOOTING_REGRESSION_PASS:',
+            'swordfish': 'SWORDFISH_SERVER_REGRESSION_PASS:',
         }[args.suite]
         assert code == 0 and marker in log and 'REGRESSION_FAIL' not in log and '_SERVER_LOAD_FAIL' not in log, f'Failed; inspect {log_path}'
         if args.suite == 'tt': assert ('backend=' + args.backend) in log

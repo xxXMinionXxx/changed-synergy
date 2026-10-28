@@ -49,8 +49,8 @@ public final class BondedCreatureInventoryMenu extends AbstractContainerMenu {
     public static final int CLOTHING_COLUMNS = 5;
     /** Curios remains a distinct external panel, matching the player's Curios UI. */
     public static final int CURIO_SLOT_Y = 8;
-    public static final int WORK_SLOT_X = 80;
-    public static final int WORK_SLOT_Y = 186;
+    public static final int WORK_SLOT_X = 8;
+    public static final int WORK_SLOT_Y = 168;
     private static final int CURIO_ROWS = 4;
     private static final EquipmentSlot[] ARMOR_SLOTS = {
             EquipmentSlot.HEAD,

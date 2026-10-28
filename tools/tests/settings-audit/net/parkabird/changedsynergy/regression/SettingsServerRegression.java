@@ -51,7 +51,16 @@ public final class SettingsServerRegression {
                 ChangedSynergyConfig.SPEC.correct(config);
                 var source = server.createCommandSourceStack().withSource(SILENT).withPermission(4);
                 var publicOptions = ChangedSynergyConfig.options();
-                check(publicOptions.size() == 118, "118 public common settings: " + publicOptions.size());
+                Set<ForgeConfigSpec.ConfigValue<?>> declaredOptions = new HashSet<>();
+                for (var field : ChangedSynergyConfig.Common.class.getFields()) {
+                    if (ForgeConfigSpec.ConfigValue.class.isAssignableFrom(field.getType())) {
+                        var value = (ForgeConfigSpec.ConfigValue<?>) field.get(ChangedSynergyConfig.COMMON);
+                        if (value != ChangedSynergyConfig.COMMON.behaviourConfigRevision) declaredOptions.add(value);
+                    }
+                }
+                check(publicOptions.size() == declaredOptions.size()
+                        && new HashSet<>(publicOptions.values()).equals(declaredOptions),
+                        "Every declared public common setting is exposed exactly once");
                 check(!publicOptions.containsValue(ChangedSynergyConfig.COMMON.behaviourConfigRevision), "Migration marker stays internal");
                 for (var entry : publicOptions.entrySet()) {
                     String key = entry.getKey();
@@ -76,7 +85,7 @@ public final class SettingsServerRegression {
                 check(run(server, source, "config categories") > 0, "Category command");
                 for (String section : publicOptions.keySet().stream().map(k -> k.split("\\.")[0]).distinct().toList())
                     check(run(server, source, "config list " + section.toLowerCase(Locale.ROOT) + " 1") > 0, "Category listing: " + section);
-                check(run(server, source, "config list 2") == 118, "Original numeric pagination");
+                check(run(server, source, "config list 2") == publicOptions.size(), "Original numeric pagination");
                 check(run(server, source, "config list 9999") == 0, "Reject invalid page");
                 check(run(server, source, "config get BEHAVIOUR.BehaviourConfigRevision") == 0, "Internal marker cannot be queried");
                 try {
@@ -124,7 +133,8 @@ public final class SettingsServerRegression {
                     var value = (ForgeConfigSpec.ConfigValue<?>)field.get(ChangedSynergyClientConfig.CLIENT);
                     clients.put(String.join(".", value.getPath()), value);
                 }
-                check(clients.size() == 16, "16 client preferences");
+                check(clients.size() == ChangedSynergyClientConfig.Client.class.getFields().length,
+                        "Every declared client preference has a unique config path");
                 catalog.put("client", metadata(clients, ChangedSynergyClientConfig.SPEC));
                 Files.writeString(output.resolve("options-runtime.json"), new GsonBuilder().setPrettyPrinting().create().toJson(catalog));
             }
@@ -250,14 +260,14 @@ public final class SettingsServerRegression {
         }
         mob.goalSelector.tick();
         check(original.starts == 1 && original.ticks > 0, "Native work executes normally");
-        check(BondedPetSettings.hasRunningUtilityGoal(mob), "Following still recognizes guarded native work");
+        check(wrapped.isRunning(), "Native work remains scheduled through its guard");
         var runningWork = CompanionWorkDialogue.class.getDeclaredMethod("runningNativeWork", ChangedEntity.class);
         runningWork.setAccessible(true);
         check(runningWork.invoke(null, mob).toString().equals("FISHING"), "Work dialogue still recognizes guarded fishing");
         ChangedSynergyConfig.COMMON.companionWorkAi.set(false); mob.goalSelector.tick();
         check(!guarded.canUse() && !guarded.canContinueToUse() && original.stops == 1, "Config off stops running native work");
-        check(!BondedPetSettings.hasRunningUtilityGoal(mob) && runningWork.invoke(null, mob) == null,
-                "Stopped work releases following and cannot emit work reactions");
+        check(!wrapped.isRunning() && runningWork.invoke(null, mob) == null,
+                "Stopped work leaves the scheduler and cannot emit work reactions");
         ChangedSynergyConfig.COMMON.companionWorkAi.set(true);
         check(guarded.canUse(), "Config on restores native work");
         level.getGameRules().getRule(ChangedSynergyGameRules.BOND_SYSTEM).set(false, server);

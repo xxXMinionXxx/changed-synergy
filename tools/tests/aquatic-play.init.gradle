@@ -1,0 +1,9 @@
+gradle.beforeProject { project ->
+    project.layout.buildDirectory.set(project.file('.codex-tmp/aquatic-play-build'))
+    project.afterEvaluate {
+        project.sourceSets.main.java.srcDir(project.file('tools/tests/aquatic-play'))
+        project.tasks.named('compileJava').configure {
+            source project.file('tools/tests/negotiation-lifecycle/net/parkabird/changedsynergy/regression/PeerPlayRegression.java')
+        }
+    }
+}

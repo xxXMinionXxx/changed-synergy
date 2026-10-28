@@ -1,0 +1,1171 @@
+{
+  "description": "Apply Crossader's latest hall, ceiling, painting and extra cleanup. Preserve Synergy story text, retained inventory contents, dependency replacements and unrelated repairs.",
+  "source_filename": "red_lab_tower(1).nbt",
+  "source_sha256": "f6ddd3c0ac1340ea208065256138877322366d945f4af8cffed3723d00f7b9b3",
+  "base_source_sha256": "322b96900b747f6e38fe8aed1e41364994d370ccd5011c1f4836c401d50d73a7",
+  "blocks": [
+    {
+      "pos": [
+        14,
+        9,
+        8
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "lower"
+        },
+        "Name": "changed:beifeng_crystal"
+      }
+    },
+    {
+      "pos": [
+        14,
+        10,
+        8
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "upper"
+        },
+        "Name": "changed:beifeng_crystal"
+      }
+    },
+    {
+      "pos": [
+        15,
+        8,
+        6
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        15,
+        8,
+        7
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        15,
+        9,
+        5
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:wall_lightred"
+      }
+    },
+    {
+      "pos": [
+        15,
+        9,
+        6
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "lower"
+        },
+        "Name": "changed:dark_latex_crystal_large"
+      }
+    },
+    {
+      "pos": [
+        15,
+        9,
+        7
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "lower"
+        },
+        "Name": "changed:beifeng_crystal"
+      }
+    },
+    {
+      "pos": [
+        15,
+        9,
+        9
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "lower",
+          "extended": "false"
+        },
+        "Name": "changed:latex_pup_crystal"
+      }
+    },
+    {
+      "pos": [
+        15,
+        10,
+        5
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:wall_lightred_striped"
+      }
+    },
+    {
+      "pos": [
+        15,
+        10,
+        6
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "upper"
+        },
+        "Name": "changed:dark_latex_crystal_large"
+      }
+    },
+    {
+      "pos": [
+        15,
+        10,
+        7
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "upper"
+        },
+        "Name": "changed:beifeng_crystal"
+      }
+    },
+    {
+      "pos": [
+        16,
+        8,
+        5
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        16,
+        8,
+        6
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        16,
+        8,
+        7
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        17,
+        8,
+        5
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        17,
+        8,
+        6
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        17,
+        8,
+        7
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        17,
+        8,
+        8
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_ice"
+      }
+    },
+    {
+      "pos": [
+        17,
+        8,
+        9
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_ice"
+      }
+    },
+    {
+      "pos": [
+        17,
+        9,
+        4
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "minecraft:tinted_glass"
+      }
+    },
+    {
+      "pos": [
+        17,
+        9,
+        6
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "lower"
+        },
+        "Name": "changed:dark_latex_crystal_large"
+      }
+    },
+    {
+      "pos": [
+        17,
+        10,
+        4
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "minecraft:tinted_glass"
+      }
+    },
+    {
+      "pos": [
+        17,
+        10,
+        6
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "upper"
+        },
+        "Name": "changed:dark_latex_crystal_large"
+      }
+    },
+    {
+      "pos": [
+        17,
+        11,
+        4
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "minecraft:tinted_glass"
+      }
+    },
+    {
+      "pos": [
+        17,
+        12,
+        4
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "minecraft:tinted_glass"
+      }
+    },
+    {
+      "pos": [
+        17,
+        13,
+        4
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "minecraft:tinted_glass"
+      }
+    },
+    {
+      "pos": [
+        18,
+        8,
+        5
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        18,
+        8,
+        6
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        18,
+        8,
+        7
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        18,
+        8,
+        8
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_ice"
+      }
+    },
+    {
+      "pos": [
+        18,
+        8,
+        9
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_ice"
+      }
+    },
+    {
+      "pos": [
+        18,
+        9,
+        4
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "minecraft:tinted_glass"
+      }
+    },
+    {
+      "pos": [
+        18,
+        9,
+        5
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "lower"
+        },
+        "Name": "changed:beifeng_crystal"
+      }
+    },
+    {
+      "pos": [
+        18,
+        9,
+        7
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "lower"
+        },
+        "Name": "changed:wolf_crystal"
+      }
+    },
+    {
+      "pos": [
+        18,
+        10,
+        4
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "minecraft:tinted_glass"
+      }
+    },
+    {
+      "pos": [
+        18,
+        10,
+        5
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "upper"
+        },
+        "Name": "changed:beifeng_crystal"
+      }
+    },
+    {
+      "pos": [
+        18,
+        10,
+        7
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "upper"
+        },
+        "Name": "changed:wolf_crystal"
+      }
+    },
+    {
+      "pos": [
+        18,
+        11,
+        4
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "minecraft:tinted_glass"
+      }
+    },
+    {
+      "pos": [
+        18,
+        12,
+        4
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "minecraft:tinted_glass"
+      }
+    },
+    {
+      "pos": [
+        19,
+        8,
+        6
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        19,
+        8,
+        7
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        19,
+        8,
+        8
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "changed:dark_latex_ice"
+      }
+    },
+    {
+      "pos": [
+        19,
+        9,
+        4
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "minecraft:tinted_glass"
+      }
+    },
+    {
+      "pos": [
+        19,
+        9,
+        5
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "lower"
+        },
+        "Name": "changed:dark_latex_crystal_large"
+      }
+    },
+    {
+      "pos": [
+        19,
+        10,
+        4
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "minecraft:tinted_glass"
+      }
+    },
+    {
+      "pos": [
+        19,
+        10,
+        5
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "upper"
+        },
+        "Name": "changed:dark_latex_crystal_large"
+      }
+    },
+    {
+      "pos": [
+        19,
+        11,
+        4
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "minecraft:tinted_glass"
+      }
+    },
+    {
+      "pos": [
+        19,
+        12,
+        4
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Name": "minecraft:tinted_glass"
+      }
+    },
+    {
+      "pos": [
+        20,
+        9,
+        5
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "lower"
+        },
+        "Name": "changed:dark_latex_crystal_large"
+      }
+    },
+    {
+      "pos": [
+        20,
+        9,
+        6
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "lower"
+        },
+        "Name": "changed:dark_latex_crystal_large"
+      }
+    },
+    {
+      "pos": [
+        20,
+        9,
+        14
+      ],
+      "before": {
+        "Properties": {
+          "half": "lower",
+          "extended": "true"
+        },
+        "Name": "changed:latex_pup_crystal"
+      },
+      "after": {
+        "Properties": {
+          "half": "lower",
+          "extended": "false"
+        },
+        "Name": "changed:latex_pup_crystal"
+      }
+    },
+    {
+      "pos": [
+        20,
+        10,
+        5
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "upper"
+        },
+        "Name": "changed:dark_latex_crystal_large"
+      }
+    },
+    {
+      "pos": [
+        20,
+        10,
+        6
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "half": "upper"
+        },
+        "Name": "changed:dark_latex_crystal_large"
+      }
+    },
+    {
+      "pos": [
+        20,
+        10,
+        14
+      ],
+      "before": {
+        "Properties": {
+          "half": "upper",
+          "extended": "true"
+        },
+        "Name": "changed:latex_pup_crystal"
+      },
+      "after": {
+        "Name": "minecraft:air"
+      }
+    },
+    {
+      "pos": [
+        18,
+        7,
+        23
+      ],
+      "before": {
+        "Name": "minecraft:calcite"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        20,
+        7,
+        5
+      ],
+      "before": {
+        "Name": "minecraft:calcite"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        21,
+        7,
+        5
+      ],
+      "before": {
+        "Name": "minecraft:calcite"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        27,
+        7,
+        17
+      ],
+      "before": {
+        "Name": "minecraft:calcite"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        38,
+        7,
+        18
+      ],
+      "before": {
+        "Name": "minecraft:calcite"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        38,
+        7,
+        19
+      ],
+      "before": {
+        "Name": "minecraft:calcite"
+      },
+      "after": {
+        "Name": "changed:dark_latex_block"
+      }
+    },
+    {
+      "pos": [
+        15,
+        0,
+        3
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "east": "false",
+          "south": "true",
+          "north": "false",
+          "west": "false",
+          "up": "false"
+        },
+        "Name": "minecraft:vine"
+      }
+    },
+    {
+      "pos": [
+        15,
+        0,
+        37
+      ],
+      "before": {
+        "Properties": {
+          "east": "true",
+          "south": "false",
+          "north": "false",
+          "west": "false",
+          "up": "false"
+        },
+        "Name": "minecraft:vine"
+      },
+      "after": {
+        "Properties": {
+          "east": "true",
+          "south": "false",
+          "north": "true",
+          "west": "false",
+          "up": "false"
+        },
+        "Name": "minecraft:vine"
+      }
+    },
+    {
+      "pos": [
+        19,
+        1,
+        24
+      ],
+      "before": {
+        "Properties": {
+          "waterlogged": "false",
+          "hanging": "false"
+        },
+        "Name": "minecraft:lantern"
+      },
+      "after": {
+        "Name": "minecraft:air"
+      }
+    },
+    {
+      "pos": [
+        19,
+        1,
+        26
+      ],
+      "before": {
+        "Properties": {
+          "half": "lower",
+          "waterlogged": "false",
+          "facing": "north"
+        },
+        "Name": "changed:latex_container"
+      },
+      "after": {
+        "Name": "minecraft:air"
+      }
+    },
+    {
+      "pos": [
+        19,
+        2,
+        26
+      ],
+      "before": {
+        "Properties": {
+          "half": "upper",
+          "waterlogged": "false",
+          "facing": "north"
+        },
+        "Name": "changed:latex_container"
+      },
+      "after": {
+        "Name": "minecraft:air"
+      }
+    },
+    {
+      "pos": [
+        20,
+        1,
+        25
+      ],
+      "before": {
+        "Name": "changed:dark_latex_block"
+      },
+      "after": {
+        "Name": "minecraft:air"
+      }
+    },
+    {
+      "pos": [
+        21,
+        1,
+        25
+      ],
+      "before": {
+        "Properties": {
+          "facing": "north",
+          "open": "false"
+        },
+        "Name": "minecraft:barrel"
+      },
+      "after": {
+        "Name": "minecraft:air"
+      }
+    },
+    {
+      "pos": [
+        21,
+        2,
+        25
+      ],
+      "before": {
+        "Properties": {
+          "oranges": "3",
+          "waterlogged": "false"
+        },
+        "Name": "changed:dropped_orange"
+      },
+      "after": {
+        "Name": "minecraft:air"
+      }
+    },
+    {
+      "pos": [
+        22,
+        1,
+        26
+      ],
+      "before": {
+        "Name": "changed:dark_latex_block"
+      },
+      "after": {
+        "Name": "minecraft:air"
+      }
+    },
+    {
+      "pos": [
+        22,
+        1,
+        27
+      ],
+      "before": {
+        "Properties": {
+          "state": "0"
+        },
+        "Name": "changed:lab_table"
+      },
+      "after": {
+        "Name": "minecraft:air"
+      }
+    },
+    {
+      "pos": [
+        22,
+        2,
+        27
+      ],
+      "before": {
+        "Properties": {
+          "waterlogged": "false",
+          "filled": "dark_latex"
+        },
+        "Name": "changed:erlenmeyer_flask"
+      },
+      "after": {
+        "Name": "minecraft:air"
+      }
+    },
+    {
+      "pos": [
+        23,
+        1,
+        24
+      ],
+      "before": {
+        "Properties": {
+          "state": "0"
+        },
+        "Name": "changed:lab_table"
+      },
+      "after": {
+        "Name": "minecraft:air"
+      }
+    },
+    {
+      "pos": [
+        23,
+        2,
+        24
+      ],
+      "before": {
+        "Properties": {
+          "waterlogged": "false",
+          "filled": "dark_latex"
+        },
+        "Name": "changed:erlenmeyer_flask"
+      },
+      "after": {
+        "Name": "minecraft:air"
+      }
+    },
+    {
+      "pos": [
+        29,
+        0,
+        37
+      ],
+      "before": {
+        "Name": "minecraft:air"
+      },
+      "after": {
+        "Properties": {
+          "east": "false",
+          "south": "false",
+          "north": "true",
+          "west": "false",
+          "up": "false"
+        },
+        "Name": "minecraft:vine"
+      }
+    }
+  ],
+  "remove_covers": [
+    [
+      19,
+      8,
+      7
+    ]
+  ],
+  "painting": {
+    "variant": "changed:kade_tail",
+    "blockPos": [
+      21,
+      20,
+      23
+    ],
+    "pos": [
+      22.0,
+      21.0,
+      23.03125
+    ]
+  },
+  "excluded_unrelated_source_positions": [],
+  "remove_entities": [
+    {
+      "id": "minecraft:item_frame",
+      "pos": [22.5, 2.03125, 26.5]
+    },
+    {
+      "id": "changed:dark_latex_yufeng",
+      "pos": [
+        8.029883567456636,
+        9.0,
+        16.22248076483669
+      ]
+    },
+    {
+      "id": "minecraft:skeleton",
+      "pos": [
+        22.01652734045979,
+        9.0,
+        23.507324769503427
+      ]
+    },
+    {
+      "id": "minecraft:skeleton",
+      "pos": [
+        24.198556270382824,
+        9.0,
+        11.73896311110812
+      ]
+    },
+    {
+      "id": "minecraft:skeleton",
+      "pos": [
+        24.43588208280289,
+        9.0,
+        12.252904638677919
+      ]
+    },
+    {
+      "id": "minecraft:skeleton",
+      "pos": [
+        25.5,
+        9.0,
+        12.5
+      ]
+    }
+  ]
+}

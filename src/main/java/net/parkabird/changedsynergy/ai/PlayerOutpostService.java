@@ -124,6 +124,12 @@ public final class PlayerOutpostService {
     }
 
     public static void applyRole(ChangedEntity mob, ServerPlayer owner, Role role) {
+        applyRole(mob, owner, role, true);
+    }
+
+    private static void applyRole(ChangedEntity mob, ServerPlayer owner, Role role, boolean playerCommand) {
+        if (playerCommand) CompanionSeatingService.newCommand(mob, owner);
+        CreatureTaskNavigation.clearFailure(mob);
         CreatureCacheGuardService.finish(mob, false);
         SocialAudienceGoal.end(mob, owner);
         // An interrupted wild delivery cannot run while this camp owns the MOVE task.
@@ -133,7 +139,7 @@ public final class PlayerOutpostService {
         PlayerOutpostRestGoal.cleanup(mob);
         if (role == Role.CREW || role == Role.HOLD || role == Role.RETURN || role == Role.RETREAT) {
             if (mob.getPersistentData().hasUUID("ChangedSynergyRestOwner")) SharedRestGoal.cancel(mob);
-            CreatureComfortGoal.endSeatedActivity(mob);
+            if (!CompanionSeatingService.commandedSeat(mob)) CreatureComfortGoal.endSeatedActivity(mob);
             if (mob.isSleeping()) mob.stopSleeping();
         }
         mob.getPersistentData().putUUID(OUTPOST_OWNER, owner.getUUID());
@@ -345,7 +351,7 @@ public final class PlayerOutpostService {
             if (!authorized(mob, owner)) {
                 data.remove(outpost, mob.getUUID());
                 clearAssignment(mob);
-            } else applyRole(mob, owner, outpost.members.get(mob.getUUID()).role);
+            } else applyRole(mob, owner, outpost.members.get(mob.getUUID()).role, false);
         }
     }
 
@@ -357,8 +363,6 @@ public final class PlayerOutpostService {
             mob.setTarget(null);
             mob.setAggressive(false);
         }
-        if (mob.getPersistentData().hasUUID(OUTPOST_OWNER) && operational(mob))
-            CompanionOpenDoorGoal.slidePastOpenTrapdoor(mob);
         if (mob.tickCount % 100 != 0) return;
         PlayerOutpostRestGoal.cleanupStale(mob);
         PlayerOutpostMealGoal.cleanupStale(mob);
@@ -397,7 +401,7 @@ public final class PlayerOutpostService {
                     boolean following = LatexSocialMemory.isPetOwner(mob, owner)
                             ? LatexSocialMemory.isFollowingOwner(mob)
                             : CreaturePersonality.isSocialFollowing(mob, owner);
-                    if (shouldFollow != following) applyRole(mob, owner, member.role);
+                    if (shouldFollow != following) applyRole(mob, owner, member.role, false);
                 }
             }
         }

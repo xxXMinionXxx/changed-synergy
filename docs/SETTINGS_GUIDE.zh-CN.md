@@ -1,6 +1,6 @@
 # 设置指南
 
-这份指南覆盖 Changed: Synergy 1.1.4 的全部 **115 项公开服务器配置、16 项客户端配置、14 项世界规则**。
+这份指南列出 Changed: Synergy 1.1.5 的服务器配置、客户端配置和世界规则。
 以下列出各项默认值、允许范围和用途。
 
 服务器文件是 `config/changed_synergy-common.toml`；客户端显示文件是
@@ -14,6 +14,10 @@
 
 下方标题是界面分类，并未改动旧 TOML 键的位置。范围和默认值与命令校验使用同一份定义。
 详细命令语法见 [SERVER_CONFIGURATION.md](SERVER_CONFIGURATION.md)，世界规则见 [GAMERULES.md](GAMERULES.md)。
+
+安装 Synergy 后，新世界的 `changed:keepConscious`（兽化保留意识）默认开启。
+旧世界会保留存档中的值，更新模组不会把已有的 `false` 强制改成 `true`。
+使用 `/gamerule changed:keepConscious` 查询当前值，使用 `/gamerule changed:keepConscious true` 开启。
 
 营地工作需要同时开启“胶兽生活”世界规则、玩家营地、供给工作；采集、狩猎、农耕、炊事、运输还受各自开关控制。
 堆肥属于农耕，同时要求开启农耕。关闭运输不会阻止其他职能收回自己的产物。
@@ -84,14 +88,17 @@
 | 设置键 | 默认值 | 范围／选项 | 作用 |
 | --- | --- | --- | --- |
 | `RELATIONSHIPS.TamedCompanionRegeneration` | `0` | 0 ~ 5 | 原生宠物恢复等级: Changed 原生宠物获得的生命恢复等级；设为零则关闭。 |
+| `RELATIONSHIPS.CompanionAutoEat` | `true` | true / false | 伙伴低血量进食: 羁绊和朋友胶兽低血量时按伤势选择自身食物回血，保留原生属性与碗瓶。金苹果需生命不高于35%，附魔金苹果需不高于20%。羁绊重伤时仍优先包裹玩家，进食间隔3秒。 |
+| `RELATIONSHIPS.CompanionSeating` | `true` | true / false | 允许熟悉的朋友和羁绊使用指定座位；关闭后取消未完成的登乘，仍允许安全下座。 |
+| `RELATIONSHIPS.CompanionRallyBoarding` | `true` | true / false | 召集附近正在跟随的伙伴登上玩家所乘载具，需要同时开启伙伴乘坐。 |
 | `RELATIONSHIPS.OrdinaryTransfurReversal` | `true` | true / false | 普通逆转兽化: 允许通过谈判、羁绊伙伴和睡眠解除兽化。关闭后仍可正常结束接管，并保留 /untf 与 /untransfur 故障恢复指令。 |
 | `RELATIONSHIPS.OrganicSleepReversal` | `true` | true / false | 有机兽化睡眠逆转：允许在完整睡过一夜后解除有机兽化。仍需开启“普通逆转兽化”，并遵守永久兽化和原生身份保护。 |
 | `RELATIONSHIPS.ProtectiveReleaseRequests` | `true` | true / false | 羁绊保护性滞留: 多次因危险被救援后，谨慎、保护欲强或敏感的羁绊可能需要玩家反复请求才肯释放。每次请求都会关闭轮盘，需要重新打开再问。 |
 | `RELATIONSHIPS.BondedEmergencyRescue` | `true` | true / false | 羁绊紧急营救: 允许胶兽羁绊包裹营救、有机羁绊带主人撤离；另行开启后也允许水生朋友营救溺水玩家。关闭后仍可主动包裹或正常协助战斗。 |
 | `RELATIONSHIPS.AquaticFriendDrowningRescue` | `true` | true / false | 水生朋友溺水营救: 玩家因溺水实际受到伤害后，允许水生朋友包裹营救；同时需要开启“羁绊紧急营救”。 |
-| `RELATIONSHIPS.BondedKinConfinement` | `true` | true / false | 羁绊同族击杀禁闭: 羁绊目睹玩家多次击杀同阵营胶兽后，可对主人实施禁闭。 |
+| `RELATIONSHIPS.BondedKinConfinement` | `true` | true / false | 羁绊目睹主人多次击杀同阵营胶兽后，会接管人类主人，或将已兽化的主人强制抱离而不改变其形态。有机羁绊始终使用安全抱离。 |
 | `RELATIONSHIPS.BondedKinKillBaseLimit` | `3` | 1 ~ 20 | 羁绊同族击杀基础门槛: 触发羁绊禁闭所需的基础目睹击杀次数；好感度越高，容忍次数越多。 |
-| `RELATIONSHIPS.ChangedVanillaRelationshipAnimalProtection` | `true` | true / false | Changed Vanilla 关系动物保护: 阻止已建立关系的 Changed Vanilla 胶兽感染动物；高威望的人类农场保护独立生效。 |
+| `RELATIONSHIPS.ChangedVanillaRelationshipAnimalProtection` | `true` | true / false | Changed Vanilla 关系动物保护: 安装 Changed Vanilla 后，阻止拥有可信任的“熟悉”及以上关系的胶兽感染动物；高威望的人类农场保护独立生效。 |
 | `RELATIONSHIPS.CompanionMonsterAssistOnly` | `false` | true / false | 仅协助对抗怪物: 仅当你攻击敌对怪物或受到其攻击时，朋友与羁绊胶兽才会加入战斗。 |
 | `RELATIONSHIPS.SelfDefensePenaltyProtection` | `true` | true / false | 自卫免除关系惩罚: 反击先攻击你的胶兽时，不扣除阵营声望，也不触发旁观者的关系惩罚或羁绊禁闭。主动挑起战斗仍会受到惩罚。 |
 | `RELATIONSHIPS.AllowMultipleBonds` | `false` | true / false | 允许多个羁绊: 允许同时与多个胶兽建立羁绊。关闭时仍可自愿兽化，但已有羁绊时不会再建立新羁绊。 |
@@ -104,7 +111,9 @@
 | `RELATIONSHIPS.FactionPursuitOverworldOnly` | `false` | true / false | 追击小队仅限主世界: 开启后追击小队只会在主世界刷新；默认关闭，允许在所有维度刷新。 |
 | `RELATIONSHIPS.IndependentFactionReputation` | `false` | true / false | 阵营声望独立: 开启后，各阵营声望独立变化；与一个阵营交好不会降低对立阵营声望，可以与所有阵营结盟。过去已损失的声望不会自动恢复。 |
 | `RELATIONSHIPS.PostTransfurTruceSeconds` | `90` | 0 ~ 600 | 兽化后停战时长: 兽化或接管释放后，各胶兽阵营恢复敌意前的保护秒数；设为 0 可关闭。 |
-| `RELATIONSHIPS.PeacefulVillageRelations` | `true` | true / false | 村庄单位和平相处: 阻止胶兽与村民、流浪商人、铁傀儡及兼容的村庄守卫互相攻击。默认开启。 |
+| `RELATIONSHIPS.PeacefulDarkWhiteRelations` | `true` | true / false | 白胶与黑胶和平相处：关闭后恢复原有宿敌关系。主动攻击和敌对声望仍会引发冲突。 |
+| `RELATIONSHIPS.DarkWhiteEnvironmentProtection` | `true` | true / false | 白胶与黑胶环境保护：双方胶兽及已兽化玩家免受对方环境胶液的伤害和兽化。主动使用物品、胶兽攻击不受影响，与和平开关独立。 |
+| `RELATIONSHIPS.PeacefulVillageRelations` | `true` | true / false | 村庄单位和平相处：让胶兽（包括兽化玩家）与村民、流浪商人、铁傀儡及兼容的村庄守卫和平相处，村民不再仅因玩家的物种而逃跑。玩家主动攻击、真实村庄恶名引起的反击仍然生效。默认开启。 |
 | `RELATIONSHIPS.NonRivalCombatProtection` | `true` | true / false | 非宿敌胶兽互斗保护：在生命值降至20%（至少1点）时结束互斗。关闭后允许正常致命伤害；同族友伤防护、羁绊安全线和玩家战斗规则独立生效。 |
 
 ### 招呼与社交行为
@@ -115,6 +124,11 @@
 | `RELATIONSHIPS.PatPacification` | `true` | true / false | 抚摸安抚: 允许玩家通过抚摸使胶兽停止追逐并进入短暂停战。关闭后，普通抚摸反应和关系进展仍然生效。 |
 | `RELATIONSHIPS.PlayfulFriendTransfur` | `true` | true / false | 调皮朋友的玩闹兽化: 好感不足 28 点的成年调皮朋友偶尔会尝试友好兽化；调皮与有礼貌为互斥的行为特质，不参与台词选择。空手轻打可以中断尝试，并让对方安分五分钟，不损失声望。 |
 | `RELATIONSHIPS.PoliteHumanInteraction` | `true` | true / false | 招呼机制: 有礼貌的个体可以先向陌生人打招呼，再决定是否追逐。 |
+| `RELATIONSHIPS.AmbientPeerInteractions` | `true` | true / false | 空闲胶兽可以互相抚摸，并邀请附近非敌对胶兽玩耍。工作、战斗、救援及命令优先。 |
+| `RELATIONSHIPS.ChasePlayGames` | `true` | true / false | 启用 NPC 之间及“玩一下”普通分支的地面追逐。催眠练习和原有概率擒抱保持原样。 |
+| `RELATIONSHIPS.ChasePlayShortHugs` | `true` | true / false | 体型适合时，追上后无伤拥抱两秒；否则以触碰庆祝。 |
+| `RELATIONSHIPS.ChasePlayDurationSeconds` | `15` | 5 ~ 120 | 先跑三秒后，追逐阶段持续的秒数。 |
+| `RELATIONSHIPS.ChasePlayCooldownSeconds` | `180` | 180 ~ 7200 | NPC 自动追逐邀请的最小间隔；玩家“玩一下”沿用原有冷却。 |
 | `RELATIONSHIPS.PoliteApproachRange` | `12.0` | 4.0 ~ 32.0 | 招呼寻路范围: 有礼貌的个体开始谨慎靠近人类的最远距离。 |
 | `RELATIONSHIPS.PoliteApproachSpeed` | `0.42` | 0.05 ~ 1.5 | 招呼寻路速度: 胶兽礼貌靠近人类时使用的寻路速度。 |
 | `RELATIONSHIPS.PoliteResponseSeconds` | `14` | 4 ~ 60 | 招呼回应时间: 胶兽等待人类用抚摸回应招呼的秒数。 |
@@ -253,7 +267,7 @@
 | --- | --- | --- | --- |
 | `DIALOGUE.UsesTranslator` | `true` | true / false | Addon 翻译器兼容: 启用的 Changed Addon Plus 翻译器可以翻译胶兽台词，即使关闭了心灵感应。关闭此项会停用翻译器的绕过功能，不会让所有玩家直接听懂台词。 |
 | `DIALOGUE.AddonAnimalCalls` | `true` | true / false | Addon 动物叫声: 让有对应叫声的胶兽在部分情绪反应中使用 Addon 的动物叫声。 |
-| `DIALOGUE.TelepathyEnabled` | `true` | true / false | 启用心灵感应: 允许通过已解锁的心灵感应、兽化形态、催眠和接管听懂台词。关闭后暂停解锁进度，改用物种叫声，但保留原有进度。受支持且已启用的翻译器仍可翻译；催眠和接管玩法照常生效。 |
+| `DIALOGUE.TelepathyEnabled` | `true` | true / false | 启用心灵感应: 允许通过已解锁的心灵感应、兽化形态、催眠和接管听懂台词。关闭后暂停解锁进度，改用物种叫声，但保留原有进度。能够直接说话的物种仍可被听懂，受支持且已启用的翻译器仍可翻译；催眠和接管玩法照常生效。 |
 | `DIALOGUE.TelepathyUnlockTransfurs` | `3` | 0 ~ 20 | 心灵感应解锁次数: 永久解锁心灵感应所需的完整兽化次数。设为 0 只会阻止新解锁，已解锁的能力仍然有效。如需连同已有能力一起关闭，请关闭“启用心灵感应”。 |
 
 ### Changed Addon Plus 兼容
@@ -264,6 +278,12 @@
 | `RELATIONSHIPS.PacifyTamedCompanions` | `true` | true / false | 持续安抚原生宠物: 持续为 Changed 原生宠物刷新“pacified”状态，避免其错误锁定目标。需要安装 Changed Addon Plus。 |
 
 ## 客户端设置
+
+### 玩家头顶名称
+
+| 设置键 | 默认值 | 范围／选项 | 作用 |
+| --- | --- | --- | --- |
+| `PLAYER NAMES.ShowNativePlayerNames` | `true` | true / false | 允许显示 TT 原生胶兽玩家的头顶名称，仍遵循 TT 自身的显示规则。关闭后仅在本客户端隐藏这些标签；不影响 NPC 名字、聊天、玩家列表和社交称呼。 |
 
 ### 兽化反馈
 
@@ -291,6 +311,7 @@
 | 设置键 | 默认值 | 范围／选项 | 作用 |
 | --- | --- | --- | --- |
 | `TELEPATHY.TelepathicDanmaku` | `true` | true / false | 屏幕台词显示: 将普通胶兽台词显示在屏幕上；关闭后改为发送到聊天栏。 |
+| `TELEPATHY.UntranslatedVocalizations` | `true` | true / false | 未翻译的动物叫声文字：关闭后隐藏聊天框和对白弹层中无法理解的叫声文字，不影响翻译后的对白或实际叫声音效。 |
 | `TELEPATHY.PopupHeightOffset` | `0.0` | -0.75 ~ 0.75 | 台词弹窗高度偏移: 按屏幕高度比例调整。负数上移，正数下移，0 保持原位置。 |
 | `TELEPATHY.DanmakuHeightOffset` | `0.0` | -0.75 ~ 0.75 | 横向弹幕高度偏移: 独立调整横向弹幕的位置。负数上移，正数下移，0 保持原位置。 |
 | `TELEPATHY.DialogueDisplayMode` | `"AUTO"` | AUTO, POPUP, DANMAKU | 台词展示方式: 选择随机弹窗或横向弹幕；自动模式会为英文使用弹窗，为中日韩语言使用弹幕。 |
@@ -302,6 +323,12 @@
 | --- | --- | --- | --- |
 | `TUTORIAL HINTS.MechanicHints` | `true` | true / false | 机制提示: 为 Synergy 的重要互动显示一次性的提示。 |
 | `TUTORIAL HINTS.NegotiationNextStepHint` | `true` | true / false | 谈判下一步提示: 在谈判中显示下一步建议。建议有时会判断错误；投喂后准确率会大幅提高。 |
+
+### 界面动效
+
+| 键 | 默认值 | 允许范围 | 用途 |
+| --- | --- | --- | --- |
+| `UI MOTION.ReducedUiMotion` | `false` | true / false | 减少弹簧位移、轮盘倾斜和错序等待，保留短淡入与选中反馈。不改变计时、冷却、QTE 判定或实体动画。 |
 
 ### 对抗显示
 
@@ -329,3 +356,10 @@
 | `changedSynergyCreatureLife` | `true` | 胶兽生活系统: 启用胶兽日常、野外群落、采集、玩家营地和纯白胶融入分出。关闭时暂停这些活动，保留营地成员。各 AI 与工作开关仍然生效；放置或采收方块遵循 mobGriefing。 |
 | `changedSynergyHypnosisQte` | `true` | Changed 催眠视线对抗: 启用催眠视线抵抗、操作锁定和迷离惩罚。关闭后仍保留 Changed 原有催眠效果。 |
 | `changedSynergyGrabQteEnhancements` | `true` | Changed 擒抱QTE增强: 启用服务端同步键位和挣脱后的安全僵直。关闭后仍保留 Changed 原有擒抱，挣脱后立即恢复攻击。 |
+
+## 玩家友好搂抱
+
+| 服务端配置 | 默认 | 作用 |
+| --- | --- | --- |
+| `RELATIONSHIPS.PlayerFriendlyHugs` | `true` | 允许右键原有擒抱选项切换无伤搂抱；关闭时安全释放正在搂抱的目标。 |
+| `RELATIONSHIPS.PlayerFriendlyHugPlayers` | `true` | 允许搂抱人类及兽化玩家，同时要求主模组允许玩家擒抱。 |

@@ -30,7 +30,7 @@ public final class BondedCreatureInventoryScreen
             Component title) {
         super(menu, inventory, title);
         imageWidth = 212;
-        imageHeight = menu.hasWorkCargo() ? 210 : 166;
+        imageHeight = menu.hasWorkCargo() ? BondedCreatureInventoryMenu.WORK_SLOT_Y + 24 : 166;
     }
 
     @Override
@@ -109,9 +109,21 @@ public final class BondedCreatureInventoryScreen
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
         if (menu.hasWorkCargo()) {
-            graphics.drawString(font, Component.translatable("menu.changed_synergy.inventory.work_cargo"),
-                    BondedCreatureInventoryMenu.WORK_SLOT_X, 172, 0x404040, false);
+            renderWorkCargoLabel(graphics, Component.translatable("menu.changed_synergy.inventory.work_cargo"));
         }
+    }
+
+    private void renderWorkCargoLabel(GuiGraphics graphics, Component label) {
+        int left = BondedCreatureInventoryMenu.WORK_SLOT_X + PlayerOutpostCargoInventory.SIZE * 18 + 8;
+        int available = imageWidth - left - 8;
+        int textWidth = font.width(label);
+        float scale = Math.min(1, available / (float)Math.max(1, textWidth));
+        graphics.pose().pushPose();
+        graphics.pose().translate(left + Math.round((available - textWidth * scale) / 2),
+                BondedCreatureInventoryMenu.WORK_SLOT_Y + Math.round((16 - font.lineHeight * scale) / 2), 0);
+        graphics.pose().scale(scale, scale, 1);
+        graphics.drawString(font, label, 0, 0, 0x404040, false);
+        graphics.pose().popPose();
     }
 
     @Override
@@ -120,13 +132,14 @@ public final class BondedCreatureInventoryScreen
             float partialTick,
             int mouseX,
             int mouseY) {
-        graphics.blit(TEXTURE, leftPos, topPos, 0.0F, 0.0F,
-                212, 166, 212, 166);
         if (menu.hasWorkCargo()) {
-            graphics.fill(leftPos, topPos + 166, leftPos + imageWidth, topPos + imageHeight, 0xFFC6C6C6);
-            renderSlotPanel(graphics, BondedCreatureInventoryMenu.WORK_SLOT_X,
+            InventoryFrame.draw(graphics, leftPos, topPos, imageWidth, imageHeight);
+            graphics.blit(TEXTURE, leftPos + 4, topPos + 4, 4, 4, 204, 158, 212, 166);
+            renderSlots(graphics, BondedCreatureInventoryMenu.WORK_SLOT_X,
                     BondedCreatureInventoryMenu.WORK_SLOT_Y, PlayerOutpostCargoInventory.SIZE,
                     PlayerOutpostCargoInventory.SIZE);
+        } else {
+            graphics.blit(TEXTURE, leftPos, topPos, 0.0F, 0.0F, 212, 166, 212, 166);
         }
         if (menu.clothingVisible()) {
             graphics.fill(
@@ -135,7 +148,7 @@ public final class BondedCreatureInventoryScreen
                     leftPos + 208,
                     topPos + 80,
                     0xFFC6C6C6);
-            renderSlotPanel(
+            renderSlots(
                     graphics,
                     BondedCreatureInventoryMenu.CLOTHING_SLOT_X,
                     BondedCreatureInventoryMenu.CLOTHING_SLOT_Y,
@@ -174,18 +187,15 @@ public final class BondedCreatureInventoryScreen
         int panelY = topPos + relativeY - 4;
         int panelWidth = usedColumns * 18 + 8;
         int panelHeight = rows * 18 + 8;
-        graphics.fill(panelX, panelY, panelX + panelWidth, panelY + panelHeight,
-                0xFF111715);
-        graphics.fill(panelX + 1, panelY + 1,
-                panelX + panelWidth - 1, panelY + panelHeight - 1,
-                0xFFD0D0D0);
+        InventoryFrame.draw(graphics, panelX, panelY, panelWidth, panelHeight);
+        renderSlots(graphics, relativeX, relativeY, columns, slotCount);
+    }
+
+    private void renderSlots(GuiGraphics graphics, int relativeX, int relativeY, int columns, int slotCount) {
         for (int index = 0; index < slotCount; index++) {
             int slotX = leftPos + relativeX + index % columns * 18;
             int slotY = topPos + relativeY + index / columns * 18;
-            graphics.fill(slotX - 1, slotY - 1, slotX + 17, slotY + 17,
-                    0xFF373737);
-            graphics.fill(slotX, slotY, slotX + 16, slotY + 16,
-                    0xFF8B8B8B);
+            InventoryFrame.slot(graphics, slotX, slotY);
         }
     }
 }

@@ -107,6 +107,8 @@ final class WildOutpostRegression {
             Object originalNavigation = navigation.get(second);
             var failed = new FailedNavigation(second);
             try {
+                second.setOnGround(true);
+                level.getChunkAt(net.minecraft.core.BlockPos.containing(second.position().add(15, 0, 0)));
                 navigation.set(second, failed);
                 var routine = new CreatureRoutineGoal(second);
                 for (var entry : Map.<String, Object>of("state", CreatureLifeMemory.RoutineState.DELIVERING,
@@ -115,7 +117,7 @@ final class WildOutpostRegression {
                     field.setAccessible(true); field.set(routine, entry.getValue());
                 }
                 for (int tick = 0; tick < 40; tick++) routine.tick();
-                check(failed.attempts == 3, "A failed delivery route retries three times in 40 ticks instead of every tick");
+                check(failed.attempts == 1, "Repeated delivery updates in the same game tick share one failed path search: " + failed.attempts);
             } finally { navigation.set(second, originalNavigation); }
             System.out.println("WILD_OUTPOST_REGRESSION_PASS: " + checks + " checks");
         } finally {
@@ -173,7 +175,7 @@ final class WildOutpostRegression {
     private static final class FailedNavigation extends net.minecraft.world.entity.ai.navigation.GroundPathNavigation {
         int attempts;
         FailedNavigation(ChangedEntity creature) { super(creature, creature.level()); }
-        @Override public boolean moveTo(double x, double y, double z, double speed) { attempts++; return false; }
+        @Override public net.minecraft.world.level.pathfinder.Path createPath(BlockPos target, int accuracy) { attempts++; return null; }
     }
 
     private static void check(boolean value, String message) {

@@ -2,7 +2,7 @@
 
 Pure White Wolves, pups, Cerberuses and Bloodcell Wolves retain their species and body during regional adaptation. Away from White territory, their individual eyes become visible; Cerberuses gain eyes on all three heads, with stable individual colours and styles. Returning home hides them again. The same applies in Instinct mode.
 
-Start as a human or a native latex creature. Native species choices require **TrueTransfur**. **2.0.0** is recommended for the full native roleplay and Instinct experience. **1.0.1** remains supported for native origins and direct player control.
+Start as a human or a native latex creature. Native species choices require **TrueTransfur 2.x** for the supported native roleplay and Instinct experience. Starting with Synergy 1.1.5, TrueTransfur **1.0.1** compatibility is no longer maintained or tested.
 
 The archive has a human record and five creature sections: White, Dark, Variant, Organic and Aquatic. A section is a browsing category; check the species dossier for its actual faction and rival faction. Eligible juvenile and fusion forms are included. Some special forms and bosses are unavailable.
 
@@ -16,7 +16,7 @@ The archive has a human record and five creature sections: White, Dark, Variant,
 
 The **Completely random** note is attached to the opening cover. It includes the human record and selectable species in your archive. Each creature section also has **Choose a random species from this category** as its first card. Both options require confirmation and respect server restrictions.
 
-Use the paper corners, mouse wheel or left/right arrow keys to turn register pages. Tab and Shift+Tab change sections; up/down selects a card and Enter opens it. A dossier's left corner returns to the register. Escape backs out of pages during first selection. During an operator-opened re-selection, Escape cancels without changing your previous origin; close an open confirmation first.
+Use the paper corners, mouse wheel or left/right arrow keys to turn register pages. Tab and Shift+Tab change sections; up/down selects a card and Enter opens it. A dossier's left corner returns to the register. Escape backs out of pages during first selection; leaving its welcome screen selects human and keeps you connected. The **Continue as human** footer does the same. During an operator-opened re-selection, Escape cancels without changing your previous origin; close an open confirmation first.
 
 While selecting, you are temporarily invisible and protected from mob targeting. Selecting an origin does not grant friendship or a bond automatically.
 

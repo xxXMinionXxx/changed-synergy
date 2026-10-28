@@ -1293,6 +1293,11 @@ public final class CreatureSettlementService {
             return AquaticProvisionMode.NEARSHORE;
         }
 
+        if (creature.getType().is(net.minecraft.tags.TagKey.create(
+                net.minecraft.core.registries.Registries.ENTITY_TYPE,
+                ResourceLocation.fromNamespaceAndPath("changed_synergy", "aquatic_open_ocean"))))
+            return AquaticProvisionMode.OPEN_OCEAN;
+
         Optional<BlockPos> cache = CreatureCommunityData.snapshot(creature)
                 .flatMap(CreatureCommunityData.Snapshot::cache);
         if (cache.isPresent()) {

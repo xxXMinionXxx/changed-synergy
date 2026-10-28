@@ -1,7 +1,6 @@
 package net.parkabird.changedsynergy.ai;
 
 import java.util.UUID;
-import javax.annotation.Nullable;
 import net.ltxprogrammer.changed.entity.ChangedEntity;
 import net.parkabird.changedsynergy.dialogue.NpcDialogue;
 import net.parkabird.changedsynergy.dialogue.NpcDialogue.Cue;
@@ -48,11 +47,6 @@ public final class BondReleaseService {
         NpcDialogue.triggerBondFarewell(pet, player, cue);
         LatexSocialMemory.unregisterBond(pet, player);
         PlayerRelationshipSettings.rememberContact(player, pet, false);
-    }
-
-    @Nullable
-    public static ChangedEntity loadedCreature(ServerPlayer player, UUID creatureUuid) {
-        return LatexSocialMemory.findLoadedBondedCreature(player, creatureUuid);
     }
 
     public enum Result {

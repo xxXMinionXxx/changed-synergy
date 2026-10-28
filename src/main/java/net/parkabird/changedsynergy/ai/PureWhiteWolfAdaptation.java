@@ -65,6 +65,11 @@ public final class PureWhiteWolfAdaptation {
             return;
         }
 
+        var controller = BondedSuitService.getSuitController(creature);
+        updateCreature(creature, level, controller != null ? controller.blockPosition() : creature.blockPosition());
+    }
+
+    private static void updateCreature(ChangedEntity creature, ServerLevel level, BlockPos position) {
         boolean pure = isNativeForm(creature);
         if (TrueTransfurCompat.isInstinctBody(creature)) {
             setAdaptedForm(creature, isAdaptedPlayer(TrueTransfurCompat.bodyOwner(creature)));
@@ -94,8 +99,8 @@ public final class PureWhiteWolfAdaptation {
             return;
         }
 
-        if (inHomeBiome(creature)) {
-            rememberHome(level, creature.blockPosition(), data);
+        if (inHomeTerritory(level, position)) {
+            rememberHome(level, position, data);
             data.remove(AWAY_SINCE);
             data.putBoolean(ADAPTED, false);
             setAdaptedForm(creature, false);
@@ -106,7 +111,7 @@ public final class PureWhiteWolfAdaptation {
             setAdaptedForm(creature, true);
             return;
         }
-        if (!farFromRememberedHome(level, creature.blockPosition(), data)) {
+        if (!farFromRememberedHome(level, position, data)) {
             data.remove(AWAY_SINCE);
             return;
         }
@@ -140,12 +145,23 @@ public final class PureWhiteWolfAdaptation {
             return;
         }
         var variant = ProcessTransfur.getPlayerTransfurVariant(player);
-        if (variant == null || variant.isTemporaryFromSuit()
+        if (variant == null
                 || !PureWhiteVision.isPureWhiteForm(variant)
                 || !(variant instanceof PlayerState holder)) {
             return;
         }
         ServerLevel level = player.serverLevel();
+        if (variant.isTemporaryFromSuit()) {
+            var pet = BondedSuitService.getWrappingPet(player);
+            boolean wasAdapted = isAdaptedPlayer(variant);
+            if (pet != null && isNativeForm(pet)) updateCreature(pet, level, player.blockPosition());
+            var data = pet != null && isNativeForm(pet) ? existingData(pet) : null;
+            holder.changedSynergy$setPureWhiteAdaptation(data == null ? new CompoundTag() : data);
+            setAdaptedForm(variant.getChangedEntity(), data != null && data.getBoolean(ADAPTED));
+            if (wasAdapted != isAdaptedPlayer(variant)) Changed.PACKET_HANDLER.send(
+                    PacketDistributor.TRACKING_ENTITY_AND_SELF.with(() -> player), SyncTransfurPacket.Builder.of(player));
+            return;
+        }
         LivingEntity visibleBody = TrueTransfurCompat.interactionBody(player);
         BlockPos position = visibleBody.blockPosition();
         CompoundTag data = holder.changedSynergy$getPureWhiteAdaptation();
@@ -189,7 +205,7 @@ public final class PureWhiteWolfAdaptation {
 
     public static boolean isAdaptedPlayer(
             @Nullable TransfurVariantInstance<?> variant) {
-        return variant != null && !variant.isTemporaryFromSuit()
+        return variant != null
                 && PureWhiteVision.isPureWhiteForm(variant)
                 && variant instanceof PlayerState holder
                 && holder.changedSynergy$getPureWhiteAdaptation()
@@ -235,10 +251,6 @@ public final class PureWhiteWolfAdaptation {
         return creature.getPersistentData().contains(DATA_KEY, Tag.TAG_COMPOUND)
                 ? creature.getPersistentData().getCompound(DATA_KEY)
                 : null;
-    }
-
-    private static boolean inHomeBiome(ChangedEntity creature) {
-        return inHomeTerritory(creature.level(), creature.blockPosition());
     }
 
     public static boolean inHomeTerritory(net.minecraft.world.level.Level level, BlockPos position) {
@@ -328,7 +340,7 @@ public final class PureWhiteWolfAdaptation {
         adaptation = replacement.getPersistentData().getCompound(DATA_KEY);
         boolean adapted = ChangedSynergyConfig.COMMON.pureWhiteWolfAdaptation.get()
                 && ChangedSynergyGameRules.enabled(source.level(), ChangedSynergyGameRules.CREATURE_LIFE)
-                && !inHomeBiome(replacement);
+                && !inHomeTerritory(replacement.level(), replacement.blockPosition());
         adaptation.putBoolean(ADAPTED, adapted);
         setAdaptedForm(replacement, adapted);
         var appearance = new net.ltxprogrammer.changed.entity.BasicPlayerInfo();

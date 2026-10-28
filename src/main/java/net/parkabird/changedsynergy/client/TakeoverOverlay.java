@@ -36,7 +36,23 @@ public final class TakeoverOverlay {
 
     private TakeoverOverlay() {}
     @SubscribeEvent public static void register(RegisterGuiOverlaysEvent event) {
+        event.registerBelow(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.CHAT_PANEL.id(), "takeover_fatal_color",
+                (gui, g, partial, w, h) -> renderFatalColor(g, partial, w, h));
         event.registerAboveAll("takeover", (gui, g, partial, w, h) -> render(g, partial, w, h));
+    }
+
+    /** The carrier colour covers the world while farewell dialogue remains readable above it. */
+    private static void renderFatalColor(GuiGraphics g, float partial, int w, int h) {
+        var state = TakeoverClientState.current();
+        int tint = state == null ? TakeoverClientState.fatalCoverTint()
+                : TakeoverClientState.normal() && state.outcome() == 2 ? state.carrierColor() : -1;
+        if (tint < 0) return;
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShaderColor(1, 1, 1, 1);
+        dissolve(g, w, h, state == null ? 1.0F : TakeoverClientState.fade(partial), tint);
+        g.flush();
+        RenderSystem.setShaderColor(1, 1, 1, 1);
     }
 
     @Mod.EventBusSubscriber(modid = ChangedSynergyMod.MOD_ID, value = Dist.CLIENT)
@@ -57,6 +73,8 @@ public final class TakeoverOverlay {
         var s = TakeoverClientState.current();
         if (s == null) {
             GrabQteOverlayRenderer.endTakeover();
+            int fatalTint = TakeoverClientState.fatalCoverTint();
+            if (fatalTint >= 0) return;
             float wakeFade = TakeoverClientState.fade(partial);
             if (manualExoskeletonVisual()) {
                 RenderSystem.enableBlend();
@@ -78,7 +96,7 @@ public final class TakeoverOverlay {
             boolean mergedSleep = TakeoverClientState.normal() && s.outcome() == 1
                     && (s.phase() == TakeoverStatePacket.SLEEPING
                             || s.phase() == TakeoverStatePacket.RELEASING);
-            blackout(g, w, h, fade,
+            if (!(TakeoverClientState.normal() && s.outcome() == 2)) blackout(g, w, h, fade,
                     mergedSleep ? TakeoverClientState.wakeTint() : 0);
         }
         RenderSystem.setShaderColor(1, 1, 1, 1);
@@ -177,6 +195,11 @@ public final class TakeoverOverlay {
             g.drawString(font, TakeoverClientState.text(key),
                     left, top + lines * 13 + 2, 0xD2FFF6, true);
         }
+    }
+
+    private static void dissolve(GuiGraphics g, int w, int h, float progress, int primaryColor) {
+        int alpha = Math.round(255 * Mth.clamp(progress, 0, 1));
+        if (alpha > 0) g.fill(0, 0, w, h, alpha << 24 | primaryColor & 0xFFFFFF);
     }
 
     private static void blackout(GuiGraphics g, int w, int h, float progress, int primaryColor) {

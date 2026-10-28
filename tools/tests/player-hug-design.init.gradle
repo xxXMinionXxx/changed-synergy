@@ -1,0 +1,6 @@
+gradle.beforeProject { project ->
+    project.layout.buildDirectory.set(project.file('.codex-tmp/player-hug-design-build'))
+    project.afterEvaluate {
+        project.sourceSets.main.java.srcDir(project.file('tools/tests/player-hug-design'))
+    }
+}

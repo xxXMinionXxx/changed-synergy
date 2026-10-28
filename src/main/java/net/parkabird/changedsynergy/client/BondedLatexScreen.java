@@ -232,7 +232,7 @@ public final class BondedLatexScreen extends AbstractRadialScreen<BondedLatexMen
         graphics.setColor(
                 red, green, blue,
                 RadialWheelAnimations.layerAlpha(this));
-        graphics.blit(texture, (int)x - 32 + leftPos, (int)y - 32 + topPos,
+        RadialWheelAnimations.drawFrame(this, graphics, texture, (int)x - 32 + leftPos, (int)y - 32 + topPos,
                 0.0F, 0.0F, 64, 64, 64, 64);
         graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }

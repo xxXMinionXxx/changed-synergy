@@ -299,9 +299,11 @@ public final class DialogueOutpostRegression {
             level.setBlock(position, Blocks.BARREL.defaultBlockState(), 2);
             net.parkabird.changedsynergy.ai.CreatureCommunityData.markCache(wild, position);
             var cache = (net.minecraft.world.Container)level.getBlockEntity(position);
-            check(!net.parkabird.changedsynergy.ai.CreatureCacheGuardService.handleCacheAccess(level, player, position)
-                            && !player.getAdvancements().getOrStartProgress(advancement).isDone(),
-                    "Rejected cache use does not award an advancement without opening the container");
+            var access = new PlayerInteractEvent.RightClickBlock(player, InteractionHand.MAIN_HAND,
+                    position, new BlockHitResult(Vec3.atCenterOf(position), Direction.UP, position, false));
+            net.parkabird.changedsynergy.event.CreatureCacheGuardEvents.onCacheAccess(access);
+            check(!access.isCanceled() && !player.getAdvancements().getOrStartProgress(advancement).isDone(),
+                    "Cache use is allowed, but the advancement still requires actually opening the container");
             var opened = net.minecraft.world.inventory.ChestMenu.threeRows(10, player.getInventory(), cache);
             net.parkabird.changedsynergy.event.CreatureCacheGuardEvents.onCacheOpened(
                     new net.minecraftforge.event.entity.player.PlayerContainerEvent.Open(player, opened));

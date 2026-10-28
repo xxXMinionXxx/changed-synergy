@@ -22,6 +22,8 @@ public final class TakeoverSession {
 
     public static final long PREPARE_TICKS = 0, CHALLENGE_TICKS = 200,
         SLEEP_TICKS = 200, EYE_CLOSE_TICKS = 40, EYE_OPEN_TICKS = 40,
+        FATAL_FADE_TICKS = 140, FATAL_HOLD_TICKS = 60, SURRENDER_FAREWELL_TICKS = 80,
+        SURRENDER_CONFIRM_TICKS = 600,
         EXOSKELETON_AWAKE_TICKS = 600,
         MIN_EXOSKELETON_AWAKE_TICKS = 100, MAX_EXOSKELETON_AWAKE_TICKS = 1200,
         MAX_ORDINARY_TICKS = 6000, RELEASE_WAIT_TICKS = 600,
@@ -357,11 +359,20 @@ public final class TakeoverSession {
         return true;
     }
 
-    /** The fatal outcome completes while the sleep vignette is fully closed. */
+    /** An explicit, authenticated surrender starts the terminal fade without waiting for the deadline. */
+    public boolean surrender(long now) {
+        tick(now);
+        if (kind != Kind.ORDINARY || phase != Phase.CONTROLLED && phase != Phase.BORROWED) return false;
+        compensationCancelled = true;
+        sleep(now);
+        return true;
+    }
+
+    /** Fatal sleep leaves time for both dialogue lines and an opaque colour hold. */
     public boolean completeFatalSleep(long now) {
         observe(now);
         if (kind != Kind.ORDINARY || phase != Phase.SLEEPING
-                || now < phaseUntil - SLEEP_TICKS + EYE_CLOSE_TICKS) return false;
+                || now < phaseUntil - SLEEP_TICKS + FATAL_FADE_TICKS + FATAL_HOLD_TICKS) return false;
         release(now, ReleaseReason.SLEEP);
         return true;
     }

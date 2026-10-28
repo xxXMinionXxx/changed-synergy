@@ -100,21 +100,22 @@ public final class PlayerRelationshipClientEvents {
         }
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.player.isSpectator()) return;
-        Component hint = Component.translatable(
-                "menu.changed_synergy.relationship.switch_to_relationships");
+        Component hint = Component.translatable(AbilityWheelInput.showHoldHint(screen)
+                ? "menu.changed_synergy.ability.hold_hint"
+                : "menu.changed_synergy.relationship.switch_to_relationships");
         GuiGraphics graphics = event.getGuiGraphics();
-        int textWidth = minecraft.font.width(hint);
-        int x = (screen.width - textWidth) / 2;
-        int y = screen.height - 18;
+        var lines = minecraft.font.split(hint, Math.max(80, screen.width - 24));
+        int y = screen.height - 8 - lines.size() * 10;
         float alpha = RadialWheelAnimations.overallAlpha(screen);
-        int backgroundAlpha = Math.max(0, Math.min(
-                255, Math.round(0x78 * alpha)));
         int textAlpha = Math.max(0, Math.min(
                 255, Math.round(0xF0 * alpha)));
-        graphics.fill(x - 5, y - 3, x + textWidth + 5, y + 11,
-                backgroundAlpha << 24);
-        graphics.drawString(minecraft.font, hint, x, y,
-                textAlpha << 24 | 0x00FFFFFF, true);
+        // Minecraft's font treats very small alpha values as opaque.
+        if (textAlpha < 4) return;
+        for (var line : lines) {
+            graphics.drawString(minecraft.font, line, (screen.width - minecraft.font.width(line)) / 2, y,
+                    textAlpha << 24 | 0x00FFFFFF, true);
+            y += 10;
+        }
     }
 
     /** Preserve native paging; switch only after the user scrolls past an edge. */

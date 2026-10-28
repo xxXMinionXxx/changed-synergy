@@ -20,6 +20,8 @@ public final class ChangedSynergySoundEvents {
             register("pat_latex_sticky");
     public static final RegistryObject<SoundEvent> PAT_LATEX_BRUSH =
             register("pat_latex_brush");
+    public static final RegistryObject<SoundEvent> SWORDFISH_RUSH =
+            register("swordfish_rush");
 
     private ChangedSynergySoundEvents() {
     }

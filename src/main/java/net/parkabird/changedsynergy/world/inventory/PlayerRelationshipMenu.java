@@ -64,6 +64,7 @@ public final class PlayerRelationshipMenu extends AbstractContainerMenu
     private final boolean absorptionNegotiation;
     private final boolean negotiationUsesRelationshipSlot;
     private String outpostAction = "outpost";
+    private boolean rallyBoarding;
     @Nullable private BlockPos outpostTarget;
     @Nullable private UUID outpostInvitee;
 
@@ -91,7 +92,10 @@ public final class PlayerRelationshipMenu extends AbstractContainerMenu
                 && InvoluntaryTransfurNegotiation.hasAbsorptionClaim(server);
         this.negotiationUsesRelationshipSlot = absorptionNegotiation
                 && !hasFreeAbilitySlot(server);
-        if (server != null) refreshOutpostAction(server);
+        if (server != null) {
+            refreshOutpostAction(server);
+            rallyBoarding = net.parkabird.changedsynergy.ai.CompanionSeatingService.rallyAvailable(server);
+        }
     }
 
     public PlayerRelationshipMenu(
@@ -110,6 +114,7 @@ public final class PlayerRelationshipMenu extends AbstractContainerMenu
                 DamageFilter.values(), data.readVarInt(),
                 DamageFilter.FRIENDS);
         this.outpostAction = data.readUtf(32);
+        this.rallyBoarding = data.readBoolean();
         int count = Math.min(64, data.readVarInt());
         this.contacts = new ArrayList<>(count);
         for (int index = 0; index < count; index++) {
@@ -158,6 +163,7 @@ public final class PlayerRelationshipMenu extends AbstractContainerMenu
     }
 
     public String outpostAction() { return outpostAction; }
+    public boolean canRallyBoarding() { return rallyBoarding; }
 
     private void refreshOutpostAction(ServerPlayer player) {
         outpostAction = PlayerOutpostCommand.wheelAction(player);
@@ -229,6 +235,7 @@ public final class PlayerRelationshipMenu extends AbstractContainerMenu
             }
             case "open_ability_wheel" -> openAbilityWheel(origin);
             case "open_outpost" -> openOutpost(origin);
+            case "rally_boarding" -> net.parkabird.changedsynergy.ai.CompanionSeatingService.rally(origin);
             default -> {
                 return;
             }
@@ -337,6 +344,7 @@ public final class PlayerRelationshipMenu extends AbstractContainerMenu
         }
         if (LatexSocialMemory.isPetOwner(creature, origin)
                 || LatexSocialMemory.isBonded(creature, origin)) {
+            net.parkabird.changedsynergy.ai.CompanionSeatingService.newCommand(creature, origin);
             LatexSocialMemory.setFollowingOwner(
                     creature, !LatexSocialMemory.isFollowingOwner(creature));
             PlayerRelationshipSettings.recallFollowingContact(origin, creature);
@@ -348,6 +356,7 @@ public final class PlayerRelationshipMenu extends AbstractContainerMenu
                     "message.changed_synergy.relationship.follow_locked"), true);
             return;
         }
+        net.parkabird.changedsynergy.ai.CompanionSeatingService.newCommand(creature, origin);
         CreaturePersonality.setSocialFollowing(
                 creature,
                 origin,
@@ -358,6 +367,8 @@ public final class PlayerRelationshipMenu extends AbstractContainerMenu
     private void toggleGroupFollow(ServerPlayer origin) {
         List<ChangedEntity> loaded = PlayerRelationshipSettings.loadedRelated(origin);
         boolean shouldFollow = loaded.stream().anyMatch(creature -> {
+            if (creature.distanceToSqr(net.parkabird.changedsynergy.compat.TrueTransfurCompat.interactionBody(origin)) <= 16 * 16
+                    && net.parkabird.changedsynergy.ai.CompanionSeatingService.canLeaveSeat(creature, origin)) return true;
             if (LatexSocialMemory.isBonded(creature, origin)
                     || LatexSocialMemory.isPetOwner(creature, origin)) {
                 return !LatexSocialMemory.isFollowingOwner(creature);
@@ -367,6 +378,7 @@ public final class PlayerRelationshipMenu extends AbstractContainerMenu
         });
         int changed = 0;
         for (ChangedEntity creature : loaded) {
+            net.parkabird.changedsynergy.ai.CompanionSeatingService.newCommand(creature, origin);
             if (LatexSocialMemory.isBonded(creature, origin)
                     || LatexSocialMemory.isPetOwner(creature, origin)) {
                 LatexSocialMemory.setFollowingOwner(creature, shouldFollow);
@@ -562,6 +574,8 @@ public final class PlayerRelationshipMenu extends AbstractContainerMenu
         payload.putInt("damage_filter", damageFilter.ordinal());
         refreshOutpostAction(origin);
         payload.putString("outpost_action", outpostAction);
+        rallyBoarding = net.parkabird.changedsynergy.ai.CompanionSeatingService.rallyAvailable(origin);
+        payload.putBoolean("rally_boarding", rallyBoarding);
         ListTag list = new ListTag();
         for (Contact contact : contacts) {
             CompoundTag tag = new CompoundTag();
@@ -586,6 +600,7 @@ public final class PlayerRelationshipMenu extends AbstractContainerMenu
 
     private void applyClientSync(CompoundTag payload) {
         outpostAction = payload.getString("outpost_action");
+        rallyBoarding = payload.getBoolean("rally_boarding");
         formation = enumByOrdinal(
                 Formation.values(), payload.getInt("formation"), Formation.STANDARD);
         damageFilter = enumByOrdinal(
@@ -638,6 +653,7 @@ public final class PlayerRelationshipMenu extends AbstractContainerMenu
         buffer.writeVarInt(PlayerRelationshipSettings.formation(player).ordinal());
         buffer.writeVarInt(PlayerRelationshipSettings.damageFilter(player).ordinal());
         buffer.writeUtf(PlayerOutpostCommand.wheelAction(player), 32);
+        buffer.writeBoolean(net.parkabird.changedsynergy.ai.CompanionSeatingService.rallyAvailable(player));
         buffer.writeVarInt(contacts.size());
         contacts.forEach(contact -> writeContact(buffer, contact));
     }

@@ -85,6 +85,12 @@ public final class ChangedAddonCompat {
         return !stack.isEmpty() && id.equals(ForgeRegistries.ITEMS.getKey(stack.getItem()));
     }
 
+    /** The totem is passive: do not consume it or apply its active-use cooldown. */
+    public static boolean hasTransfurTotem(net.minecraft.world.entity.player.Player player) {
+        return isLoaded() && (player.getInventory().items.stream().anyMatch(stack -> is(stack, TRANSFUR_TOTEM))
+                || is(player.getOffhandItem(), TRANSFUR_TOTEM));
+    }
+
     /** Addon's hazard suit occupies Changed's full-body accessory slot. */
     public static boolean wearsHazardBodySuit(LivingEntity entity) {
         return isLoaded() && AccessorySlots.getForEntity(entity)
@@ -142,6 +148,11 @@ public final class ChangedAddonCompat {
                 "prepareBondedInventory",
                 new Class<?>[]{ChangedEntity.class, ServerPlayer.class},
                 pet, owner);
+        return value instanceof Container inventory ? inventory : null;
+    }
+
+    public static Container bondedInventory(ChangedEntity pet) {
+        Object value = invokeOptional("bondedInventory", new Class<?>[]{ChangedEntity.class}, pet);
         return value instanceof Container inventory ? inventory : null;
     }
 
@@ -226,10 +237,15 @@ public final class ChangedAddonCompat {
 
     /** Addon's safe-grab API is mixed into Changed's ability only when Addon is present. */
     public static void configureFriendlyGrab(Object ability, boolean safeMode) {
+        configureFriendlyGrab(ability, safeMode, true);
+    }
+
+    /** Player modes also own their target permission; NPC scripted grabs manage it separately. */
+    public static void configureFriendlyGrab(Object ability, boolean safeMode, boolean allowTransfurred) {
         if (!isLoaded() || ability == null) {
             return;
         }
-        invokeInstance(ability, "setAllowGrabTransfurred", true);
+        invokeInstance(ability, "setAllowGrabTransfurred", allowTransfurred);
         invokeInstance(ability, "setSafeModeAuthoritative", safeMode);
     }
 

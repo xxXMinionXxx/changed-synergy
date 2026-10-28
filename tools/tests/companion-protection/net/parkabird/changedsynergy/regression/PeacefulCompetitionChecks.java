@@ -87,9 +87,8 @@ final class PeacefulCompetitionChecks {
             level.getGameRules().getRule(ChangedSynergyGameRules.NPC_AI).set(false, server);
             check(!white.canAttack(dark) && !dark.canAttack(white), "Peace survives disabled enhanced AI");
             level.getGameRules().getRule(ChangedSynergyGameRules.NPC_AI).set(true, server);
-            var adapted = spawn(player, "white_latex_wolf_male", creatures);
-            var adaptation = new net.minecraft.nbt.CompoundTag(); adaptation.putBoolean("Eligible", true);
-            adapted.getPersistentData().put(PureWhiteWolfAdaptation.DATA_KEY, adaptation);
+            var adapted = spawn(player, "pure_white_latex_wolf", creatures);
+            PureWhiteWolfAdaptation.setAdaptedForm(adapted, true);
             check(HunterFaction.of(adapted) == HunterFaction.WHITE
                             && LatexCreatureCombatRules.arePeacefulCompetitors(adapted, dark)
                             && LatexCreatureCombatRules.mustRejectTarget(adapted, dark),

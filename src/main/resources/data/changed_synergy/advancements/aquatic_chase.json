@@ -1,0 +1,23 @@
+{
+  "parent": "changed_synergy:chase_game",
+  "display": {
+    "icon": {
+      "item": "minecraft:heart_of_the_sea"
+    },
+    "title": {
+      "translate": "advancement.changed_synergy.aquatic_chase.title"
+    },
+    "description": {
+      "translate": "advancement.changed_synergy.aquatic_chase.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "complete": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

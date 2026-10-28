@@ -7,10 +7,16 @@ import java.util.Locale;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 import net.parkabird.changedsynergy.ChangedSynergyClientConfig;
 import net.parkabird.changedsynergy.ChangedSynergyClientConfig.DialogueDisplayMode;
 
 /** Client-side queue for short, non-chat telepathic dialogue lines. */
+@Mod.EventBusSubscriber(modid = "changed_synergy", value = Dist.CLIENT)
 public final class TelepathyDanmakuState {
     private static final int MAX_LINES = 10;
     private static final int MAX_ENGLISH_POPUPS = 6;
@@ -24,11 +30,29 @@ public final class TelepathyDanmakuState {
     private TelepathyDanmakuState() {
     }
 
+    @SubscribeEvent
+    public static void filterUntranslatedChat(ClientChatReceivedEvent event) {
+        if (!ChangedSynergyClientConfig.CLIENT.untranslatedVocalizations.get()
+                && isVocalization(event.getMessage())) event.setCanceled(true);
+    }
+
+    private static boolean isVocalization(Component component) {
+        if (component.getContents() instanceof TranslatableContents translated) {
+            if (translated.getKey().startsWith("dialogue.changed_synergy.vocalization.")) return true;
+            for (Object arg : translated.getArgs()) {
+                if (arg instanceof Component child && isVocalization(child)) return true;
+            }
+        }
+        return component.getSiblings().stream().anyMatch(TelepathyDanmakuState::isVocalization);
+    }
+
     public static void receive(
             Component message,
             Component speaker,
             Component dialogue,
             int accentColor) {
+        if (!ChangedSynergyClientConfig.CLIENT.untranslatedVocalizations.get()
+                && isVocalization(dialogue)) return;
         Minecraft minecraft = Minecraft.getInstance();
         if (!ChangedSynergyClientConfig.CLIENT.telepathicDanmaku.get()) {
             minecraft.gui.getChat().addMessage(message);

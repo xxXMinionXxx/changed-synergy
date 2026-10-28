@@ -1,0 +1,29 @@
+{
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:loot_table",
+          "name": "changed:chests/decayed_lab_aqua"
+        }
+      ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "changed:compact_disc",
+          "functions": [
+            {
+              "function": "minecraft:set_nbt",
+              "tag": "{n: \"Swordfish Research\", Text: '# TOP SECRET // Swordfish Research\n\n### Morphological Overview\nRecent deep-basin surveys have documented a specialized pelagic variant we have designated the **\"Latex Swordfish.\"**\n\n* **Hydrodynamic Rostrum:** By hardening the colloidal matrix along its extended upper bill, the Latex Swordfish slashes water drag to near zero, propelling itself through flooded corridors at breathtaking speeds.\n* **Facility Hazard Note:** While graceful in open water, they have a terrible habit of forgetting how long their noses are on dry land. Maintenance has already replaced four dented elevator doors and six punctured drywall panels this month alone.'}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

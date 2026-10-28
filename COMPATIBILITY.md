@@ -11,19 +11,25 @@
 | Changed Extras | 1.1.8b |
 | Changed Vanilla | 1.0.1 |
 | Domestication Innovation | 1.7.1 |
-| TrueTransfur | 2.0.0; backward compatibility with 1.0.1 |
+| TrueTransfur | 2.x |
 | Changed: Survive Protocol | 1.2.0 |
 | Farmer's Delight | 1.3.4 |
 
 Changed is required. Changed Addon Plus is optional unless a server pack chooses to require it.
 
-TrueTransfur 2.0.0 is the recommended pairing for Synergy 1.1.4. Version 1.0.1 remains supported for native origins and its direct-player integration; the separate Instinct body and expanded player interactions require 2.0.0. See the [player guides](docs/README.md) for installation and gameplay.
+TrueTransfur 2.x is the supported pairing for Synergy 1.1.5. Compatibility with TrueTransfur 1.0.1 is no longer maintained or tested. See the [player guides](docs/README.md) for installation and gameplay.
 
 ## Multiplayer
 
 Synergy runs on both client and server. Every connecting player must use the same Synergy build to use matching features and menus. Server game rules and common configuration control gameplay behavior. Client configuration controls local presentation.
 
 ## Optional integrations
+
+- 3D Skin Layers 1.11.4 renders the retained player skin layers on Latex Human,
+  Partial Dark Latex Wolf and Addon Plus's Partial Snow Leopard. Both classic
+  and slim skins are supported; partial sleeves and thighs retain their original
+  latex boundaries. The integration is client-only and follows the skin-layer
+  mod's visibility and distance settings.
 
 - Changed: Survive Protocol retains its ordinary infection and settled-form rules.
   Authorized Synergy takeovers use native progress and temporary suits, so infection
@@ -32,8 +38,7 @@ Synergy runs on both client and server. Every connecting player must use the sam
   Nether releases search below the bedrock ceiling. The supplied 1.2.0 JAR was
   tested with TT 1.0.1, TT 2.0.0, and TT 2.0.0 with Addon Plus.
 
-- TrueTransfur supports native origins in 1.0.1 and 2.0.0. Version 1.0.1
-  controls the player directly; 2.0.0 uses a separate Instinct body, preserving
+- TrueTransfur 2.x supports native origins and uses a separate Instinct body, preserving
   the real player's identity and social interactions. TrueTransfur
   2.0.0 requires Mixin Args on both sides. See
   [the integration guide](docs/TRUETRANSFUR_INSTINCT_COMPAT.md) for its scope.

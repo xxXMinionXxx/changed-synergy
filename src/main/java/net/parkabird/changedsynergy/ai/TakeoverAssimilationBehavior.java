@@ -44,7 +44,7 @@ public final class TakeoverAssimilationBehavior implements AssimilationBehavior 
             return;
         }
         if (instinctPlayer && !InstinctConfinementService.canTarget(carrier, player)) return;
-        if (!TransfurConsciousness.isKept(player)) {
+        if (!TakeoverService.allowsOrdinaryWithCurrentRule(carrier, player)) {
             if (instinctPlayer && original.willAssimilate() && carrier.getSelfVariant() != null) {
                 // A cached absorption created before the rule changed must not
                 // discard the other player's TT body on completion either.
@@ -90,11 +90,12 @@ public final class TakeoverAssimilationBehavior implements AssimilationBehavior 
     }
 
     public boolean managesNativeProgress() {
-        return TransfurConsciousness.isKept(player) && (instinctPlayer
-                ? net.parkabird.changedsynergy.ChangedSynergyConfig.COMMON.instinctConfinement.get()
+        return instinctPlayer
+                ? TransfurConsciousness.isKept(player)
+                    && net.parkabird.changedsynergy.ChangedSynergyConfig.COMMON.instinctConfinement.get()
                     && net.parkabird.changedsynergy.ChangedSynergyConfig.COMMON.takeoverEnabled.get()
                     && InstinctConfinementService.canTarget(carrier, player)
-                : TakeoverService.canBeginOrdinary(carrier, player));
+                : TakeoverService.canBeginOrdinary(carrier, player);
     }
 
     @Override

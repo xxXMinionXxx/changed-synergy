@@ -13,9 +13,17 @@ public abstract class CreatureVariantReplacementMixin {
     @Redirect(method = "replaceVariant", at = @At(value = "INVOKE",
             target = "Lnet/ltxprogrammer/changed/entity/ChangedEntity;copyTraitsFrom(Lnet/ltxprogrammer/changed/ability/IAbstractChangedEntity;)V"))
     private void changedSynergy$preserveIndividual(ChangedEntity replacement, IAbstractChangedEntity source) {
+        boolean interruptedMeal=false;
+        if (source.getEntity() instanceof ChangedEntity previous
+                && net.parkabird.changedsynergy.ai.CompanionAutoEatGoal.active(previous)) {
+            interruptedMeal=true;
+            net.parkabird.changedsynergy.ai.CompanionAutoEatGoal.cleanup(previous);
+            replacement.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND,previous.getOffhandItem().copy());
+        }
         replacement.copyTraitsFrom(source);
         if (source.getEntity() instanceof ChangedEntity previous) {
             CreatureMorphContinuity.transfer(previous, replacement);
+            if (interruptedMeal) net.parkabird.changedsynergy.ai.CompanionAutoEatGoal.transferMealInventory(previous,replacement);
         }
     }
 }

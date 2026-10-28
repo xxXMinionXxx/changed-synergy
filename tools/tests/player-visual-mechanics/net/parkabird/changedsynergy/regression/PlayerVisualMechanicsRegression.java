@@ -102,8 +102,8 @@ public final class PlayerVisualMechanicsRegression {
             pure.setTemporaryForSuit(true);
             tick(player);
             check(!PureWhiteWolfAdaptation.isAdaptedPlayer(player)
-                            && holder.changedSynergy$getPureWhiteAdaptation().getBoolean("Adapted"),
-                    "Temporary wrapping cannot activate or overwrite native adaptation state");
+                            && holder.changedSynergy$getPureWhiteAdaptation().isEmpty(),
+                    "Temporary wrapping without a carrier cannot reuse permanent-form adaptation state");
             pure.setTemporaryForSuit(false);
             tick(player);
             check(!PureWhiteWolfAdaptation.isAdaptedPlayer(player), "Disabling the option restores pure appearance");

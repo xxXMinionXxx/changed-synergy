@@ -2,6 +2,10 @@
 
 Changed: Synergy is an unofficial Minecraft mod addon.
 
+## Community structures
+
+The ocean laboratory, white laboratory tower, red laboratory tower and green laboratory tower were built by **Crossader** and supplied for integration into Synergy.
+
 ## Changed
 
 Synergy requires [Changed](https://www.curseforge.com/minecraft/mc-mods/changed-minecraft-mod), created by LtxProgrammer. Changed is distributed under the MIT License. Some Synergy code, compatibility work and visual assets refer to or adapt Changed APIs, mechanics and in-game material. Those upstream parts remain the property of their respective authors and retain their original license.

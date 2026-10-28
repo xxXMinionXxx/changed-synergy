@@ -96,6 +96,8 @@ public final class ChangedAddonSocialEvents {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onPat(ProcessPatFeature.GlobalPatReactionEvent event) {
+        // Addon's human pat key can emit this event every tick during the same held stroke.
+        if (PatAnimationService.isContinuous(event.patter, event.target)) return;
         if (event.target instanceof Player player && TakeoverService.active(player)) {
             if (event.isCancelable()) event.setCanceled(true);
             return;
@@ -471,6 +473,10 @@ public final class ChangedAddonSocialEvents {
             return null;
         }
         return favors.getInventory();
+    }
+
+    public static Container bondedInventory(ChangedEntity pet) {
+        return pet instanceof TamableLatexEntityFavors favors ? favors.getInventory() : null;
     }
 
     public static void clearBondedFavor(ChangedEntity pet) {
@@ -1064,28 +1070,26 @@ public final class ChangedAddonSocialEvents {
             ChangedEntity mob,
             IGrabberEntity grabber,
             GrabEntityAbilityInstance ability) {
-        ServerPlayer player = ability != null
-                        && ability.grabbedEntity instanceof ServerPlayer held
-                        && LatexSocialMemory.isOrganicEvacuationTarget(mob, held)
-                ? held
-                : null;
+        LivingEntity passenger = ability == null ? null : ability.grabbedEntity;
+        ServerPlayer player = passenger instanceof ServerPlayer held ? held
+                : passenger instanceof ChangedEntity body ? net.parkabird.changedsynergy.compat.TrueTransfurCompat.bodyOwner(body) : null;
         if (!(ability instanceof GrabEntityAbilityExtensor extensor)
                 || player == null
-                || !LatexSocialMemory.isOrganicEvacuationActive(mob, player)
+                || !LatexSocialMemory.isOrganicEvacuationActive(mob, passenger)
                 || !mob.isAlive()
-                || !player.isAlive()
-                || mob.level() != player.level()) {
+                || !player.isAlive() || !passenger.isAlive() || passenger.isRemoved()
+                || mob.level() != passenger.level()) {
             if (player != null && ability != null) {
                 ability.attackDown = false;
                 ability.useDown = false;
                 ability.releaseEntity(false);
                 Changed.PACKET_HANDLER.send(
                         PacketDistributor.TRACKING_ENTITY.with(grabber::asMob),
-                        new GrabEntityPacket(mob, player, GrabType.RELEASE));
+                        new GrabEntityPacket(mob, passenger, GrabType.RELEASE));
                 ChangedSynergyNetwork.CHANNEL.send(
                         PacketDistributor.PLAYER.with(() -> player),
                         new FriendlySocialHugSyncPacket(
-                                mob.getId(), player.getId(), false, 0));
+                                mob.getId(), passenger.getId(), false, 0));
             }
             if (ability instanceof GrabEntityAbilityExtensor stale) {
                 stale.setSafeModeAuthoritative(false);

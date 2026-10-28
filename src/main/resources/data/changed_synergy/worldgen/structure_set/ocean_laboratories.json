@@ -1,0 +1,18 @@
+{
+  "structures": [
+    {
+      "structure": "changed_synergy:water_tower_changed",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 40,
+    "separation": 12,
+    "salt": 192610251,
+    "exclusion_zone": {
+      "other_set": "changed:decayed_labs",
+      "chunk_count": 6
+    }
+  }
+}

@@ -60,6 +60,8 @@ public final class TakeoverClientState {
     private static int exoskeletonMotionAge;
     private static int wakeFadeTicks;
     private static int wakeTint;
+    private static Player fatalCoverPlayer;
+    private static int fatalCoverTicks, fatalCoverTint;
 
     private TakeoverClientState() {}
 
@@ -117,12 +119,15 @@ public final class TakeoverClientState {
         return wakeFadeTicks / (float)TakeoverSession.EYE_OPEN_TICKS;
     }
     public static int wakeTint() { return wakeTint; }
+    public static int fatalCoverTint() {
+        return fatalCoverTicks > 0 && fatalCoverPlayer == Minecraft.getInstance().player ? fatalCoverTint : -1;
+    }
     public static float fade(float partial) {
         float value = fade();
         if (active() && current.phase() == TakeoverStatePacket.SLEEPING) {
             // Interpolate one normal synchronization interval, never predict through a network stall.
             value += Math.min(5, sinceSync + Math.max(0, Math.min(1, partial)))
-                    / (float)TakeoverSession.EYE_CLOSE_TICKS;
+                    / (float)(current.outcome() == 2 ? TakeoverSession.FATAL_FADE_TICKS : TakeoverSession.EYE_CLOSE_TICKS);
         } else if (!active() && wakeFadeTicks > 0) {
             value = (wakeFadeTicks - Math.max(0, Math.min(1, partial)))
                     / (float)TakeoverSession.EYE_OPEN_TICKS;
@@ -158,10 +163,15 @@ public final class TakeoverClientState {
         if (packet.phase() == TakeoverStatePacket.FINISHED) {
             // A late finish for an old carrier must not clear a newer session.
             if (current != null && current.sessionId().equals(packet.sessionId())) {
+                if (packet.outcome() == 2 && packet.fade() >= 1.0F) {
+                    fatalCoverPlayer = Minecraft.getInstance().player;
+                    fatalCoverTicks = 40;
+                    fatalCoverTint = packet.carrierColor() & 0xFFFFFF;
+                }
                 if (packet.outcome() != 1) wakeTint = 0;
                 else if (wakeTint == 0) wakeTint = TakeoverScreen.backgroundColor(packet);
                 clearLocal();
-                if (packet.fade() > 0.5F)
+                if (packet.fade() > 0.5F && packet.outcome() != 2)
                     wakeFadeTicks = (int)TakeoverSession.EYE_OPEN_TICKS;
             }
             return;
@@ -173,6 +183,8 @@ public final class TakeoverClientState {
             sequenceSent = false;
             wakeFadeTicks = 0;
             wakeTint = 0;
+            fatalCoverPlayer = null;
+            fatalCoverTicks = 0;
         }
         current = packet;
         if (packet.outcome() == 1 && wakeTint == 0)
@@ -236,6 +248,8 @@ public final class TakeoverClientState {
         clearLocal();
         wakeFadeTicks = 0;
         wakeTint = 0;
+        fatalCoverPlayer = null;
+        fatalCoverTicks = 0;
     }
 
     @SubscribeEvent
@@ -294,6 +308,13 @@ public final class TakeoverClientState {
         var mc = Minecraft.getInstance();
         trackTick();
         if (!mc.isPaused() && wakeFadeTicks > 0) wakeFadeTicks--;
+        if (fatalCoverPlayer != mc.player || mc.level == null) {
+            fatalCoverPlayer = null; fatalCoverTicks = 0;
+        } else if (fatalCoverPlayer != null && !mc.isPaused()) {
+            // Hold through the native death screen; a respawn replaces this local player instance.
+            if (!fatalCoverPlayer.isAlive()) fatalCoverTicks = 40;
+            else if (fatalCoverTicks > 0) fatalCoverTicks--;
+        }
         if (mc.player == null || mc.level == null) { if (active()) clearLocal(); return; }
         if (active() && current.playerId() != mc.player.getId()) clearLocal();
         if (!active()) {
@@ -380,10 +401,15 @@ public final class TakeoverClientState {
     public static boolean request(int action, UUID screenSession) {
         if (!normal() || current == null || screenSession == null
                 || !current.sessionId().equals(screenSession)) return false;
+        if (action == TakeoverActionPacket.SURRENDER && !current.surrenderAllowed()) return false;
+        if (action == TakeoverActionPacket.CONFIRM_SURRENDER && !current.surrenderAllowed()) return false;
         if (action != TakeoverActionPacket.REQUEST_CONTROL
                 && action != TakeoverActionPacket.START_STRUGGLE
                 && action != TakeoverActionPacket.CONFIRM_STRUGGLE
                 && action != TakeoverActionPacket.NEGOTIATE
+                && action != TakeoverActionPacket.SURRENDER
+                && action != TakeoverActionPacket.CONFIRM_SURRENDER
+                && action != TakeoverActionPacket.CANCEL_SURRENDER
                 && action != TakeoverActionPacket.RETURN_CONTROL) return false;
         // Do not duplicate phase, cooldown, safety or one-use checks on the
         // client. A packet can arrive between drawing and clicking the wheel;

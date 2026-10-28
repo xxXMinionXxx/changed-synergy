@@ -5,7 +5,6 @@ import net.ltxprogrammer.changed.Changed;
 import net.ltxprogrammer.changed.ability.GrabEntityAbilityInstance;
 import net.ltxprogrammer.changed.entity.ChangedEntity;
 import net.ltxprogrammer.changed.network.packet.GrabEntityPacket;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraftforge.network.PacketDistributor;
@@ -34,10 +33,10 @@ public interface OrganicEvacuationDropGuardMixin {
         GrabEntityAbilityInstance ability = grabber.getGrabAbilityInstance();
         if (grabber.asMob() instanceof ChangedEntity mob
                 && ability != null
-                && ability.grabbedEntity instanceof ServerPlayer owner
-                && (LatexSocialMemory.isOrganicEvacuationActive(mob, owner)
+                && ability.grabbedEntity != null
+                && (LatexSocialMemory.isOrganicEvacuationActive(mob, ability.grabbedEntity)
                         || InvoluntaryTransfurNegotiation
-                                .isReleaseHoldTarget(mob, owner))) {
+                                .isReleaseHoldTarget(mob, ability.grabbedEntity))) {
             return;
         }
 

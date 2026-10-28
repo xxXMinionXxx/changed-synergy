@@ -372,9 +372,10 @@ public final class LatexSocialMemory {
     }
 
     public static void setFollowingOwner(ChangedEntity mob, boolean following) {
+        CreaturePeerInteractionService.cancel(mob);
         if (following) {
             if (mob.getPersistentData().hasUUID("ChangedSynergyRestOwner")) SharedRestGoal.cancel(mob);
-            CreatureComfortGoal.endSeatedActivity(mob);
+            if (!CompanionSeatingService.commandedSeat(mob)) CreatureComfortGoal.endSeatedActivity(mob);
             if (mob.isSleeping()) mob.stopSleeping();
         }
         data(mob).putBoolean(SHORE_WAIT, false);
@@ -1578,10 +1579,13 @@ public final class LatexSocialMemory {
     public static boolean isOrganicEvacuationTarget(
             ChangedEntity mob,
             LivingEntity target) {
+        if (target == null) return false;
         CompoundTag social = data(mob);
+        ServerPlayer owner = target instanceof ChangedEntity body
+                ? net.parkabird.changedsynergy.compat.TrueTransfurCompat.bodyOwner(body) : null;
         return social.hasUUID(ORGANIC_EVACUATION_PLAYER)
-                && target.getUUID().equals(
-                        social.getUUID(ORGANIC_EVACUATION_PLAYER));
+                && (target.getUUID().equals(social.getUUID(ORGANIC_EVACUATION_PLAYER))
+                    || owner != null && owner.getUUID().equals(social.getUUID(ORGANIC_EVACUATION_PLAYER)));
     }
 
     public static boolean isOrganicEvacuationActive(
@@ -1598,11 +1602,12 @@ public final class LatexSocialMemory {
         social.remove(ORGANIC_EVACUATION_UNTIL);
     }
 
-    /** Safe scripted holds bypass hostile QTE and transfur damage. */
+    /** Safe scripted holds retain escape QTE while bypassing transfur damage. */
     public static boolean isFriendlyArmHoldTarget(
             ChangedEntity mob,
             LivingEntity target) {
         return isFriendlySocialHugTarget(mob, target)
+                || CreaturePeerInteractionService.isPlayHold(mob, target)
                 || SharedRestGoal.isCarryTarget(mob, target)
                 || isOrganicEvacuationTarget(mob, target)
                 || InvoluntaryTransfurNegotiation.isReleaseHoldTarget(
@@ -1613,6 +1618,7 @@ public final class LatexSocialMemory {
             ChangedEntity mob,
             LivingEntity target) {
         return isFriendlySocialHugActive(mob, target)
+                || CreaturePeerInteractionService.isPlayHold(mob, target)
                 || SharedRestGoal.isCarryTarget(mob, target)
                 || isOrganicEvacuationActive(mob, target)
                 || InvoluntaryTransfurNegotiation.isReleaseHoldActive(

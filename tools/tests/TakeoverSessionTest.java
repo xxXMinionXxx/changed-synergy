@@ -442,9 +442,27 @@ public final class TakeoverSessionTest {
         }
         throw new AssertionError(reason);
     }
+    private static void surrender() {
+        var s=ordinary(true);
+        check(s.surrender(10)&&s.getPhase()==Phase.SLEEPING,"explicit surrender immediately starts loss of consciousness");
+        check(!s.surrender(11),"surrender is one-shot");
+        long covered = 10 + TakeoverSession.FATAL_FADE_TICKS;
+        long finished = covered + TakeoverSession.FATAL_HOLD_TICKS;
+        check(!s.completeFatalSleep(covered)&&s.getPhase()==Phase.SLEEPING,"full coverage still leaves an opaque reading hold");
+        check(!s.completeFatalSleep(finished-1)&&s.completeFatalSleep(finished),"fatal surrender waits for fade plus opaque hold");
+        check(TakeoverSession.FATAL_FADE_TICKS+TakeoverSession.FATAL_HOLD_TICKS<=TakeoverSession.SLEEP_TICKS,"sleep timer cannot preempt the fatal presentation");
+        s.finish(finished);check(!s.claimOranges(true)&&!s.claimAchievement(),"surrender cannot claim release rewards");
+        s=ordinary(false);check(s.requestBorrow(TakeoverSession.BORROW_WAIT_TICKS,Blocker.NONE)==Result.ACCEPTED,"borrow before surrender");
+        check(s.surrender(TakeoverSession.BORROW_WAIT_TICKS+1)&&!s.hasPlayerControl(),"surrender returns borrowed control to the carrier");
+        check(TakeoverSession.restore(s.snapshot(),TakeoverSession.BORROW_WAIT_TICKS+2).getReleaseReason()==TakeoverSession.ReleaseReason.INTERRUPTED,"saved surrender validates and retains safe restart interruption");
+        check(!TakeoverSession.exoskeleton(0).surrender(1),"mechanical exoskeleton cannot surrender a body");
+        s=ordinary(false);s.startStruggle(0,List.of(0,1));check(!s.surrender(1),"stale menu cannot replace an active QTE");
+    }
+
     public static void main(String[] args) throws Exception {
         borrowing(); qte(); rewardsAndRecovery(); mechanical(); persistenceAndLimits(); integrationApi();
         configurableWindows(); sleepOutcomes();
+        surrender();
         if (args.length > 0 && args[0].equals("--nbt")) nbtCodec();
         System.out.println("TakeoverSessionTest: " + checks + " checks passed");
     }

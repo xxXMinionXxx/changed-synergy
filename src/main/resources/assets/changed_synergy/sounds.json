@@ -1,4 +1,8 @@
 {
+  "swordfish_rush": {
+    "subtitle": "subtitles.item.trident.riptide",
+    "sounds": ["changed_synergy:ability/swordfish_rush"]
+  },
   "pat_organic": {
     "subtitle": "subtitles.changed_synergy.pat.organic",
     "sounds": [

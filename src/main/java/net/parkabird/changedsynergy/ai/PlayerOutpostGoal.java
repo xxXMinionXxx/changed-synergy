@@ -519,13 +519,9 @@ public final class PlayerOutpostGoal extends Goal {
 
     /** Preserve usable routes; ground navigation cannot rebuild them mid-jump. */
     static boolean walkTo(ChangedEntity mob, BlockPos destination, double y, double speed) {
-        var navigation = mob.getNavigation();
-        if (!navigation.isDone() && destination.equals(navigation.getTargetPos())) return true;
-        if (!canNavigate(mob)) return true;
         // These are standing/seat positions, not blocks to interact with from a neighbouring node.
-        var path = navigation.createPath(BlockPos.containing(destination.getX() + 0.5D,
-                y, destination.getZ() + 0.5D), 0);
-        return navigation.moveTo(path, speed);
+        return CreatureTaskNavigation.moveTo(mob, BlockPos.containing(destination.getX() + 0.5D,
+                y, destination.getZ() + 0.5D), 0, speed);
     }
 
     static boolean canNavigate(ChangedEntity mob) {
@@ -580,6 +576,7 @@ public final class PlayerOutpostGoal extends Goal {
             return false;
         }
         @Override public void start() {
+            CreatureTaskNavigation.clearFailure(mob);
             PlayerOutpostMealGoal.cleanup(mob);
             PlayerOutpostRestGoal.cleanup(mob);
             if (mob.isSleeping()) mob.stopSleeping();
@@ -597,6 +594,7 @@ public final class PlayerOutpostGoal extends Goal {
     }
 
     public static ItemStack insert(Container container, ItemStack source) {
+        if (container instanceof PlayerOutpostItemStorage storage) return storage.insert(source);
         ItemStack remainder = source.copy();
         for (int pass = 0; pass < 2 && !remainder.isEmpty(); pass++) {
             for (int slot = 0; slot < container.getContainerSize() && !remainder.isEmpty(); slot++) {

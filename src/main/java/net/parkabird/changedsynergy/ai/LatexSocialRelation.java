@@ -48,7 +48,8 @@ public enum LatexSocialRelation {
             return SAME_CATEGORY;
         }
         if (DarkLatexDisguise.appearsAsDarkToWhite(mob, player)) {
-            return OUTSIDER;
+            return net.parkabird.changedsynergy.ChangedSynergyConfig.COMMON.peacefulDarkWhiteRelations.get()
+                    ? OUTSIDER : RIVAL;
         }
 
         TransfurVariantInstance<?> variant = ProcessTransfur.getPlayerTransfurVariant(player);

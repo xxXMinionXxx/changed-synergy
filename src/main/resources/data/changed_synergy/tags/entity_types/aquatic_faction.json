@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "changed:pooltoy_wolf"
+    "changed:pooltoy_wolf",
+    "changed_synergy:latex_swordfish"
   ]
 }

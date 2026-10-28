@@ -15,12 +15,20 @@ public final class RadialWheelAnimations {
     private static WheelKind pendingArrival = WheelKind.NONE;
     private static long pendingArrivalNanos;
     private static int pendingEntityId = -1;
+    private static UiSpring pendingSlide;
+    private static WheelKind cancelledArrival = WheelKind.NONE;
+    private static int cancelledEntityId = -1;
+    private static long cancelledUntil;
 
     private RadialWheelAnimations() {
     }
 
     public static boolean requestClose(Object screen, Runnable completion) {
         return request(screen, completion, false);
+    }
+
+    public static float panelAlpha(Object screen) {
+        return screen instanceof RadialWheelAnimationAccess access ? access.changedSynergy$getPanelAlpha() : 1.0F;
     }
 
     public static boolean requestWheelSwitch(Object screen, Runnable completion) {
@@ -46,8 +54,11 @@ public final class RadialWheelAnimations {
         if (target == WheelKind.NONE || hasPendingSwitch()) {
             return false;
         }
+        clearCancelledArrival();
         pendingArrival = target;
         pendingArrivalNanos = System.nanoTime();
+        pendingSlide = isContinuousPlayerSwitch(screen) && screen instanceof RadialWheelAnimationAccess access
+                ? access.changedSynergy$getHorizontalSpring() : null;
         // Absorption negotiation starts from the player's ability wheel but
         // opens a synthetic creature preview, so there is no shared entity id
         // to compare across that particular hand-off.
@@ -73,6 +84,38 @@ public final class RadialWheelAnimations {
                 : 1.0F;
     }
 
+    /** Retain the native idle artwork, blending its highlight only while selected. */
+    public static void drawFrame(Object screen, net.minecraft.client.gui.GuiGraphics graphics,
+            net.minecraft.resources.ResourceLocation texture, int x, int y, float u, float v,
+            int width, int height, int textureWidth, int textureHeight) {
+        String path = texture.getPath();
+        int slash = path.lastIndexOf('/');
+        if (!(screen instanceof RadialWheelAnimationAccess access) || !path.startsWith("textures/gui/radial/")
+                || !path.endsWith(".png") || slash != path.length() - 6 || path.charAt(slash + 1) < '0' || path.charAt(slash + 1) > '7') {
+            graphics.blit(texture, x, y, u, v, width, height, textureWidth, textureHeight);
+            return;
+        }
+        float blend = access.changedSynergy$getFrameHighlight(path.charAt(slash + 1) - '0', path.contains("_selected/"));
+        String normalPath = path.replace("_selected/", "/");
+        var normal = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(texture.getNamespace(), normalPath);
+        var selected = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(texture.getNamespace(),
+                normalPath.substring(0, normalPath.lastIndexOf('/')) + "_selected/" + normalPath.substring(normalPath.lastIndexOf('/') + 1));
+        float[] color = com.mojang.blaze3d.systems.RenderSystem.getShaderColor();
+        float red = color[0], green = color[1], blue = color[2], alpha = color[3];
+        float selectedAlpha = alpha * blend;
+        // Compensate source-over blending so the shared frame interior keeps its opening opacity.
+        float normalAlpha = selectedAlpha >= 1 ? 0 : alpha * (1 - blend) / (1 - selectedAlpha);
+        if (normalAlpha > 0) {
+            graphics.setColor(red, green, blue, normalAlpha);
+            graphics.blit(normal, x, y, u, v, width, height, textureWidth, textureHeight);
+        }
+        if (selectedAlpha > 0) {
+            graphics.setColor(red, green, blue, selectedAlpha);
+            graphics.blit(selected, x, y, u, v, width, height, textureWidth, textureHeight);
+        }
+        graphics.setColor(red, green, blue, alpha);
+    }
+
     public static float overallAlpha(Object screen) {
         return screen instanceof RadialWheelAnimationAccess access
                 ? access.changedSynergy$getOverallAlpha()
@@ -83,6 +126,11 @@ public final class RadialWheelAnimations {
         return screen instanceof RadialWheelAnimationAccess access
                 ? access.changedSynergy$getHorizontalOffset()
                 : 0.0F;
+    }
+
+    /** Final layout anchor, independent of the wheel's animated position. */
+    public static float layoutOffset(int screenWidth) {
+        return Math.round(Math.min(Math.min(220.0F, screenWidth * 0.22F), Math.max(0.0F, screenWidth * 0.5F - 136.0F)));
     }
 
     /** Frames stay in eight fixed slots while the scrolled action indices advance. */
@@ -116,8 +164,7 @@ public final class RadialWheelAnimations {
         }
         if (System.nanoTime() - pendingArrivalNanos
                 > SWITCH_HANDOFF_TIMEOUT_NANOS) {
-            pendingArrival = WheelKind.NONE;
-            pendingEntityId = -1;
+            cancelPendingSwitch();
             return false;
         }
         if (kindOf(screen) != pendingArrival
@@ -125,9 +172,15 @@ public final class RadialWheelAnimations {
                         && entityId(screen) != pendingEntityId) {
             return false;
         }
-        pendingArrival = WheelKind.NONE;
-        pendingEntityId = -1;
+        if (pendingSlide != null && screen instanceof RadialWheelAnimationAccess access)
+            access.changedSynergy$continueSlide(pendingSlide);
+        cancelPendingSwitch();
         return true;
+    }
+
+    public static boolean isContinuousPlayerSwitch(Object screen) {
+        return screen instanceof AbilityRadialScreen && pendingArrival == WheelKind.PLAYER_RELATIONSHIPS
+                || screen instanceof PlayerRelationshipScreen && pendingArrival == WheelKind.ABILITY;
     }
 
     private static boolean hasPendingSwitch() {
@@ -138,14 +191,29 @@ public final class RadialWheelAnimations {
                 <= SWITCH_HANDOFF_TIMEOUT_NANOS) {
             return true;
         }
-        pendingArrival = WheelKind.NONE;
-        pendingEntityId = -1;
+        cancelPendingSwitch();
         return false;
     }
 
     public static void cancelPendingSwitch() {
         pendingArrival = WheelKind.NONE;
         pendingEntityId = -1;
+        pendingSlide = null;
+    }
+
+    public static void cancelSwitchAndArrival() {
+        cancelledArrival = pendingArrival;
+        cancelledEntityId = pendingEntityId;
+        cancelledUntil = System.nanoTime() + SWITCH_HANDOFF_TIMEOUT_NANOS;
+        cancelPendingSwitch();
+    }
+
+    public static void clearCancelledArrival() { cancelledArrival = WheelKind.NONE; }
+
+    public static boolean rejectCancelledArrival(Object screen) {
+        return cancelledArrival != WheelKind.NONE && System.nanoTime() < cancelledUntil
+                && kindOf(screen) == cancelledArrival
+                && (cancelledEntityId < 0 || entityId(screen) == cancelledEntityId);
     }
 
     private static boolean request(

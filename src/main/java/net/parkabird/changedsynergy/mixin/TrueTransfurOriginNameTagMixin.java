@@ -15,6 +15,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class TrueTransfurOriginNameTagMixin {
     @Inject(method = "onNameFormat", at = @At("HEAD"), cancellable = true, remap = false)
     private static void changedSynergy$ordinaryName(RenderNameTagEvent event, CallbackInfo callback) {
+        if (net.parkabird.changedsynergy.client.NameVisibilityClientEvents.hidesNativePlayerName(event.getEntity())) {
+            event.setResult(net.minecraftforge.eventbus.api.Event.Result.DENY);
+            callback.cancel();
+            return;
+        }
         Player player = event.getEntity() instanceof Player direct ? direct
                 : event.getEntity() instanceof ChangedEntity form ? form.getUnderlyingPlayer() : null;
         if (player != null && !NativeOriginPolicy.allows(player)) callback.cancel();

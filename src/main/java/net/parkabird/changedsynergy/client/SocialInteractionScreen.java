@@ -78,6 +78,8 @@ public final class SocialInteractionScreen
     private boolean manualGoodbyeSent;
     private boolean voluntaryConfirmationArmed;
 
+    private final long panelsOpenedAt = System.nanoTime();
+
     public SocialInteractionScreen(
             SocialInteractionMenu menu,
             Inventory inventory,
@@ -99,10 +101,12 @@ public final class SocialInteractionScreen
             actions = List.copyOf(entries);
         } else if (menu.isBondedMode()) {
             List<Action> entries = new ArrayList<>(BONDED_ACTIONS);
+            if (menu.getProgression().getBoolean("CanFriendlyTransfur")) entries.add(FRIENDLY_TRANSFUR);
             if (menu.isProvisionerTradeAvailable()) {
                 entries.add(PROVISIONER_TRADE);
             }
             if (menu.getProgression().getBoolean("TokenReserved")) entries.add(WITHDRAW_TOKEN);
+            addSeatAction(entries, menu);
             actions = List.copyOf(entries);
         } else {
             List<Action> entries = new ArrayList<>();
@@ -127,7 +131,17 @@ public final class SocialInteractionScreen
             if (menu.isProvisionerTradeAvailable()) {
                 entries.add(PROVISIONER_TRADE);
             }
+            addSeatAction(entries, menu);
             actions = List.copyOf(entries);
+        }
+    }
+
+    private static void addSeatAction(List<Action> entries, SocialInteractionMenu menu) {
+        String command = menu.getProgression().getString("SeatAction");
+        if (!command.isEmpty()) {
+            var action = new Action(command, CompanionSeatIcons.id(command.equals("social_seat")), CompanionSeatIcons.SIZE);
+            if (command.equals("social_seat")) entries.add(action);
+            else entries.add(0, action);
         }
     }
 
@@ -360,7 +374,7 @@ public final class SocialInteractionScreen
 
     private void renderRelationshipCards(GuiGraphics graphics) {
         ChangedEntity creature = menu.getCreature();
-        float alpha = RadialWheelAnimations.overallAlpha(this);
+        float alpha = RadialWheelAnimations.panelAlpha(this);
         if (alpha <= 0.01F) {
             return;
         }
@@ -377,9 +391,11 @@ public final class SocialInteractionScreen
                 if (variant != null) form = variant.getChangedEntity();
             }
             if (form != null) {
+                HunterFaction faction = HunterFaction.of(form);
                 lines.add(form.getType().getDescription());
                 lines.add(Component.translatable("menu.changed_synergy.player_social.faction",
-                        Component.translatable(HunterFaction.of(form).translationKey())));
+                        Component.translatable(faction.translationKey())
+                                .withStyle(style -> style.withColor(UiMotion.factionColor(faction)))));
             }
             renderCards(graphics, List.of(new InfoCard(menu.getSocialPlayerName(), lines)), alpha);
             return;
@@ -438,7 +454,7 @@ public final class SocialInteractionScreen
                         "routine.changed_synergy.role." + menu.getRole().id()),
                 Component.translatable(
                         "routine.changed_synergy.state." + menu.getRoutine().id())));
-        for (int index = 0; index < 3; index++) {
+        for (int index = 0; menu.getRole() != net.parkabird.changedsynergy.ai.CreatureLifeMemory.GroupRole.WANDERER && index < 3; index++) {
             currentState.add(Component.translatable(
                     "menu.changed_synergy.social.info.role_stat",
                     Component.translatable(
@@ -451,7 +467,7 @@ public final class SocialInteractionScreen
         connections.add(Component.translatable(
                 "menu.changed_synergy.social.info.faction",
                 Component.translatable(
-                        menu.getReputationGroupTranslationKey()),
+                        menu.getReputationGroupTranslationKey()).withStyle(style -> style.withColor(UiMotion.factionColor(menu.getFaction()))),
                 Component.translatable(menu.getFactionStanding().translationKey()),
                 menu.getReputation()));
         connections.add(Component.translatable(
@@ -475,37 +491,7 @@ public final class SocialInteractionScreen
                         "menu.changed_synergy.social.info.section_connections"),
                         connections));
 
-        int x = 14;
-        int wheelLeft = Math.round(width * 0.5F
-                + RadialWheelAnimations.horizontalOffset(this) - 128.0F);
-        int availableWidth = Math.max(104, wheelLeft - x - 12);
-        int desiredWidth = isEnglishLanguage()
-                ? width >= 800 ? 284 : width >= 620 ? 244 : 190
-                : width >= 800 ? 252 : width >= 620 ? 218 : 178;
-        int cardWidth = Math.min(desiredWidth, availableWidth);
-        int textWidth = Math.max(86, cardWidth - 18);
-        List<PreparedCard> prepared = cards.stream()
-                .map(card -> prepareCard(card, textWidth))
-                .toList();
-        int gap = 6;
-        int totalHeight = prepared.stream()
-                .mapToInt(PreparedCard::height)
-                .sum() + gap * (prepared.size() - 1);
-        float panelScale = Math.min(
-                1.0F,
-                Math.max(0.01F, (height - 20.0F) / totalHeight));
-        int scaledHeight = Math.round(totalHeight * panelScale);
-        int y = Math.max(10, (height - scaledHeight) / 2);
-        int accent = panelAccent();
-        graphics.pose().pushPose();
-        graphics.pose().translate(x, y, 0.0F);
-        graphics.pose().scale(panelScale, panelScale, 1.0F);
-        int cardY = 0;
-        for (PreparedCard card : prepared) {
-            renderInfoCard(graphics, card, 0, cardY, cardWidth, accent, alpha);
-            cardY += card.height() + gap;
-        }
-        graphics.pose().popPose();
+        renderCards(graphics, cards, alpha);
     }
 
     private void renderNegotiationCards(
@@ -573,32 +559,38 @@ public final class SocialInteractionScreen
             float alpha) {
         int x = 14;
         int wheelLeft = Math.round(width * 0.5F
-                + RadialWheelAnimations.horizontalOffset(this) - 128.0F);
-        int availableWidth = Math.max(104, wheelLeft - x - 12);
-        int desiredWidth = isEnglishLanguage()
-                ? width >= 800 ? 284 : width >= 620 ? 244 : 190
-                : width >= 800 ? 252 : width >= 620 ? 218 : 178;
-        int cardWidth = Math.min(desiredWidth, availableWidth);
-        int textWidth = Math.max(86, cardWidth - 18);
+                + RadialWheelAnimations.layoutOffset(width) - 128.0F);
+        int availableWidth = Math.max(1, wheelLeft - x - 12);
+        int cardWidth = RelationshipPanel.CARD_WIDTH;
+        int textWidth = cardWidth - 26;
         List<PreparedCard> prepared = cards.stream()
                 .map(card -> prepareCard(card, textWidth))
                 .toList();
-        int gap = 6;
+        int gap = 10;
         int totalHeight = prepared.stream()
                 .mapToInt(PreparedCard::height)
                 .sum() + gap * (prepared.size() - 1);
         float panelScale = Math.min(
                 1.0F,
-                Math.max(0.01F, (height - 20.0F) / totalHeight));
+                Math.max(0.01F, Math.min((height - 56.0F) / totalHeight,
+                        availableWidth / (float)cardWidth)));
         int scaledHeight = Math.round(totalHeight * panelScale);
         int y = Math.max(10, (height - scaledHeight) / 2);
-        int accent = panelAccent();
         graphics.pose().pushPose();
         graphics.pose().translate(x, y, 0.0F);
         graphics.pose().scale(panelScale, panelScale, 1.0F);
         int cardY = 0;
-        for (PreparedCard card : prepared) {
-            renderInfoCard(graphics, card, 0, cardY, cardWidth, accent, alpha);
+        for (int index = 0; index < prepared.size(); index++) {
+            PreparedCard card = prepared.get(index);
+            float entrance = UiMotion.entrance(panelsOpenedAt, index);
+            int slide = UiMotion.reduced() ? 0 : Math.round(-12 * (1 - entrance));
+            var style = switch (index) {
+                case 0 -> RelationshipPanel.CardStyle.STATUS;
+                case 1 -> RelationshipPanel.CardStyle.CONTACTS;
+                default -> RelationshipPanel.CardStyle.LOCATION;
+            };
+            renderInfoCard(graphics, card, slide, cardY, cardWidth,
+                    alpha * UiSpring.clamp(entrance), style);
             cardY += card.height() + gap;
         }
         graphics.pose().popPose();
@@ -610,7 +602,7 @@ public final class SocialInteractionScreen
             lines.addAll(font.split(line, textWidth));
         }
         return new PreparedCard(card.title(), List.copyOf(lines),
-                27 + lines.size() * 9);
+                RelationshipPanel.GEL_TEXT_PADDING + Math.max(1, lines.size()) * 9);
     }
 
     private void renderInfoCard(
@@ -619,51 +611,39 @@ public final class SocialInteractionScreen
             int x,
             int y,
             int cardWidth,
-            int accent,
-            float alpha) {
-        int backgroundAlpha = Math.round(0xB8 * alpha);
-        int borderAlpha = Math.round(0xDC * alpha);
-        int titleAlpha = Math.round(0xF4 * alpha);
-        int textAlpha = Math.round(0xE8 * alpha);
-        graphics.fill(x, y, x + cardWidth, y + card.height(),
-                withAlpha(0x10151C, backgroundAlpha));
-        graphics.fill(x, y, x + 3, y + card.height(),
-                withAlpha(accent, borderAlpha));
-        graphics.fill(x + 3, y, x + cardWidth, y + 1,
-                withAlpha(accent, Math.round(0x86 * alpha)));
-        graphics.drawString(font, card.title(), x + 9, y + 7,
-                withAlpha(accent, titleAlpha), true);
-        graphics.fill(x + 9, y + 19, x + cardWidth - 8, y + 20,
-                withAlpha(accent, Math.round(0x36 * alpha)));
-        int lineY = y + 23;
+            float alpha,
+            RelationshipPanel.CardStyle style) {
+        if (alpha <= 0.02F) return;
+        int foreground = panelTitleColor();
+        int background = panelBackground();
+        int textAlpha = Math.round(0xFF * alpha);
+        RelationshipPanel.drawCard(graphics, x, y, style, menu.isOrganic(),
+                card.height(), background, foreground, alpha);
+        graphics.drawString(font, font.plainSubstrByWidth(card.title().getString(), cardWidth - 34),
+                x + 25, y + 7, withAlpha(foreground, textAlpha), false);
+        int bodyForeground = menu.isOrganic() ? 0 : RelationshipPanel.bodyTextColor(background);
+        int lineY = y + RelationshipPanel.GEL_TOP;
         for (FormattedCharSequence line : card.lines()) {
-            graphics.drawString(font, line, x + 9, lineY,
-                    withAlpha(0xF0F2F5, textAlpha), false);
+            graphics.drawString(font, line, x + 13, lineY,
+                    withAlpha(bodyForeground, textAlpha), false);
             lineY += 9;
         }
     }
 
-    private int panelAccent() {
-        if (menu.isOrganic()) {
-            return 0xC65A4A;
-        }
-        return switch (menu.getFaction()) {
-            case WHITE -> 0xF2F5FF;
-            case DARK -> 0x9B59D0;
-            case AQUATIC -> 0x4FD6E8;
-            case LIGHT -> 0xE5A84B;
-        };
+    private int panelBackground() {
+        return menu.isOrganic() ? 0xC6C6C6
+                : colors(menu, minecraft.player.getInventory()).background().toInt();
+    }
+
+    private int panelTitleColor() {
+        if (menu.isOrganic()) return 0x404040;
+        return Color3.fromInt(panelBackground()).brightness() > 0.5F ? 0x222222
+                : colors(menu, minecraft.player.getInventory()).foreground().toInt();
     }
 
     private static String storageKey(CommunityStorage storage) {
         return "menu.changed_synergy.social.info.storage."
                 + storage.name().toLowerCase(Locale.ROOT);
-    }
-
-    private boolean isEnglishLanguage() {
-        String language = minecraft.getLanguageManager().getSelected();
-        return language != null
-                && language.toLowerCase(Locale.ROOT).startsWith("en_");
     }
 
     private static String formatHealth(float health) {
@@ -679,10 +659,8 @@ public final class SocialInteractionScreen
         int x = (width - textWidth) / 2;
         int y = height - 18;
         float alpha = RadialWheelAnimations.overallAlpha(this);
-        int backgroundAlpha = Math.round(0x76 * alpha);
         int textAlpha = Math.round(0xE8 * alpha);
-        graphics.fill(x - 5, y - 3, x + textWidth + 5, y + 11,
-                backgroundAlpha << 24);
+        if (textAlpha < 4) return;
         graphics.drawString(font, hint, x, y,
                 textAlpha << 24 | 0x00FFFFFF, true);
     }
@@ -709,7 +687,7 @@ public final class SocialInteractionScreen
         graphics.setColor(red, green, blue,
                 RadialWheelAnimations.layerAlpha(this)
                         * (used ? 0.42F : 1.0F));
-        graphics.blit(texture, (int)x - 32 + leftPos, (int)y - 32 + topPos,
+        RadialWheelAnimations.drawFrame(this, graphics, texture, (int)x - 32 + leftPos, (int)y - 32 + topPos,
                 0.0F, 0.0F, 64, 64, 64, 64);
         graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
@@ -732,6 +710,8 @@ public final class SocialInteractionScreen
         }
         Action action = actions.get(section);
         ResourceLocation icon = action.texture();
+        if (action.command().equals("social_seat") || action.command().equals("social_cancel_seat") || action.command().equals("social_disembark"))
+            icon = CompanionSeatIcons.resolve(icon);
         int centerX = (int)x + leftPos;
         int centerY = (int)y + topPos;
         float iconAlpha = isUsedNegotiationSection(section)

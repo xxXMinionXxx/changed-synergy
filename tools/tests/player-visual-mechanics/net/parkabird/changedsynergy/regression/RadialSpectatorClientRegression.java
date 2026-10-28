@@ -49,7 +49,7 @@ public final class RadialSpectatorClientRegression {
             check(scroll.isCanceled() && (boolean)field(ability, "changedSynergy$closing"),
                     "Normal transformed players can still request the relationship wheel");
             ability.keyPressed(256, 0, 0);
-            check(mc.screen == null, "Escape cancels a handoff before its packet is sent");
+            check(mc.screen == null, "Escape closes the current wheel during a handoff");
             check(String.valueOf(field(RadialWheelAnimations.class, "pendingArrival")).equals("NONE"),
                     "Cancellation clears the paired-wheel token");
             ageClose(ability); ability.tick();

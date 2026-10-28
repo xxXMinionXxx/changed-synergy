@@ -1,0 +1,23 @@
+{
+  "parent": "changed_synergy:trusted_friend",
+  "display": {
+    "icon": {
+      "item": "minecraft:oak_boat"
+    },
+    "title": {
+      "translate": "advancement.changed_synergy.companion_boarding.title"
+    },
+    "description": {
+      "translate": "advancement.changed_synergy.companion_boarding.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "complete": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

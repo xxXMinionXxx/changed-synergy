@@ -179,12 +179,18 @@ public final class PlayerOutpostData extends SavedData {
     public static Container container(ServerLevel level, BlockPos pos) {
         if (level == null || pos == null || !level.hasChunkAt(pos)) return null;
         var state = level.getBlockState(pos);
-        if (state.getBlock() instanceof ChestBlock chest) {
+        var blockEntity = level.getBlockEntity(pos);
+        if (state.getBlock() instanceof ChestBlock chest
+                && blockEntity instanceof net.minecraft.world.level.block.entity.ChestBlockEntity) {
             if (state.getValue(ChestBlock.TYPE) != net.minecraft.world.level.block.state.properties.ChestType.SINGLE
                     && !level.hasChunkAt(pos.relative(ChestBlock.getConnectedDirection(state)))) return null;
-            return ChestBlock.getContainer(chest, state, level, pos, true);
+            Container combined = ChestBlock.getContainer(chest, state, level, pos, true);
+            if (combined != null) return combined;
         }
-        return level.getBlockEntity(pos) instanceof Container container ? container : null;
+        if (blockEntity instanceof Container container) return container;
+        return blockEntity == null ? null : blockEntity
+                .getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER)
+                .map(handler -> (Container)new PlayerOutpostItemStorage(blockEntity, handler)).orElse(null);
     }
 
     /** Keeps later wild outpost placement away from a player's active home. */

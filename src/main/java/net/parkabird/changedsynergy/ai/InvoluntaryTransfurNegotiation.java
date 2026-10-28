@@ -286,7 +286,7 @@ public final class InvoluntaryTransfurNegotiation {
             return;
         }
 
-        if (!TransfurConsciousness.isKept(player)) {
+        if (!TakeoverService.allowsOrdinaryWithCurrentRule(source, player)) {
             TakeoverService.revokeOrdinaryAuthorization(source, player);
             return;
         }
@@ -408,7 +408,7 @@ public final class InvoluntaryTransfurNegotiation {
         ResourceLocation sourceType = ForgeRegistries.ENTITY_TYPES
                 .getKey(source.getType());
         boolean incompleteCompletion = isIncompleteSpecial(sourceType);
-        return TransfurConsciousness.isKept(player) && source.isAlive()
+        return TakeoverService.allowsOrdinaryWithCurrentRule(source, player) && source.isAlive()
                 && !LatexSocialMemory.isOrganic(source)
                 && (LatexSocialMemory.isSocialLatex(source)
                         || incompleteCompletion)
@@ -1316,6 +1316,25 @@ public final class InvoluntaryTransfurNegotiation {
         });
     }
 
+    private record GenderChange(UUID player, ResourceLocation from, ResourceLocation to) {}
+    private static final ThreadLocal<GenderChange> GENDER_CHANGE = new ThreadLocal<>();
+
+    /** Restrict continuity to a real native gender switch, including a setter cancelled by another mod. */
+    public static void switchGender(IAbstractChangedEntity entity, TransfurVariant<?> opposite) {
+        if (!(entity.getEntity() instanceof ServerPlayer player)
+                || !net.ltxprogrammer.changed.init.ChangedTransfurVariants.Gendered.getOpposite(entity.getSelfVariant())
+                    .filter(form -> form == opposite).isPresent()) {
+            entity.replaceVariant(opposite);
+            return;
+        }
+        GenderChange previous = GENDER_CHANGE.get();
+        GENDER_CHANGE.set(new GenderChange(player.getUUID(), entity.getSelfVariant().getFormId(), opposite.getFormId()));
+        try { entity.replaceVariant(opposite); }
+        finally {
+            if (previous == null) GENDER_CHANGE.remove(); else GENDER_CHANGE.set(previous);
+        }
+    }
+
     private static boolean matchesResultForm(ServerPlayer player, CompoundTag data) {
         ResourceLocation actual = currentForm(player);
         ResourceLocation expected = readLocation(data, RESULT_PLAYER_FORM);
@@ -1347,6 +1366,12 @@ public final class InvoluntaryTransfurNegotiation {
             return;
         }
         if (data.getBoolean(ABSORPTION_RELEASING)) return;
+        GenderChange gender = GENDER_CHANGE.get();
+        if (gender != null && gender.player().equals(player.getUUID()) && gender.to().equals(actual)
+                && gender.from().equals(readLocation(data, RESULT_PLAYER_FORM))
+                && !data.getBoolean(EXTERNAL_FORM_REMOVED)) {
+            putLocation(data, RESULT_PLAYER_FORM, actual);
+        }
         // Same-form/no-op setters need no lookup through loaded creature claims.
         if (actual != null && matchesResultForm(player, data)) return;
         if (isReleaseParticipant(player)) return;

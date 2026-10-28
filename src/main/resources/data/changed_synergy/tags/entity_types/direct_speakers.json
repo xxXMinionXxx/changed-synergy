@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "changed:dark_latex_wolf_partial",
+    "changed:latex_human",
+    {
+      "id": "changed_addon:latex_snow_leopard_partial",
+      "required": false
+    }
+  ]
+}

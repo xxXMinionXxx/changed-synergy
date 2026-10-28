@@ -856,12 +856,12 @@ public final class PlayerOutpostWorkGoal extends Goal {
     }
 
     private static int count(Container container, ItemStack item) {
-        int count = 0;
+        long count = 0;
         if (container != null) for (int slot = 0; slot < container.getContainerSize(); slot++) {
             ItemStack stored = container.getItem(slot);
             if (ItemStack.isSameItemSameTags(stored, item)) count += stored.getCount();
         }
-        return count;
+        return (int)Math.min(Integer.MAX_VALUE, count);
     }
 
     private static int find(Container container, ItemStack item, int reserve) {

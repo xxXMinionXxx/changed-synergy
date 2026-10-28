@@ -1,0 +1,12 @@
+{
+  "type": "changed:infuser",
+  "gendered": true,
+  "form": "changed_synergy:form_latex_muntjac",
+  "ingredients": [
+    { "item": "changed:latex_base" },
+    { "item": "changed:white_latex_goo" },
+    { "item": "minecraft:jungle_leaves" },
+    { "item": "minecraft:bamboo" },
+    { "item": "minecraft:leather" }
+  ]
+}

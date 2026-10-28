@@ -40,6 +40,21 @@ public final class NegotiationLifecycleRegression {
             ChangedSynergyConfig.SPEC.setConfig(com.electronwill.nightconfig.core.CommentedConfig.inMemory());
             ChangedSynergyConfig.COMMON.takeoverEnabled.set(false);
             event.getServer().overworld().getGameRules().getRule(ChangedSynergyGameRules.NATIVE_ORIGINS).set(true, event.getServer());
+            if(Boolean.getBoolean("changed_synergy.peerOnly")) {
+                net.parkabird.changedsynergy.ai.PeerPlayRegression.run(event.getServer());return;
+            }
+            if(Boolean.getBoolean("changed_synergy.gunsOnly")) {
+                TaczSuitShootingRegression.run(event.getServer());return;
+            }
+            if(Boolean.getBoolean("changed_synergy.villageOnly")) {
+                VillageCoexistenceRegression.run(event.getServer());return;
+            }
+            if(Boolean.getBoolean("changed_synergy.kinOnly")) {
+                KinInterventionRegression.run(event.getServer());return;
+            }
+            if(Boolean.getBoolean("changed_synergy.navigationOnly")) {
+                TrapdoorNavigationRegression.run(event.getServer());return;
+            }
             PlayerPersistenceRegression.run(event.getServer());
             NegotiationReasonRegression.run(event.getServer());
             OrganicSleepReversalRegression.run(event.getServer());
@@ -47,6 +62,20 @@ public final class NegotiationLifecycleRegression {
             AuthorIdentityRegression.run(event.getServer());
             KeepConsciousRegression.run(event.getServer());
             October18FeedbackRegression.run(event.getServer());
+            PeacefulCompetitionChecks.run(event.getServer());
+            OneFifteenRegression.run(event.getServer());
+            SilkAndPunishmentRegression.run(event.getServer());
+            BoundaryDefenseRegression.run(event.getServer());
+            SocialAddressRegression.run(event.getServer());
+            OutpostStorageRegression.run(event.getServer());
+            PiglinWrapTargetRegression.run(event.getServer());
+            DarkWhiteEnvironmentRegression.run(event.getServer());
+            SuitFeedbackRegression.run(event.getServer());
+            VillageCoexistenceRegression.run(event.getServer());
+            KinInterventionRegression.run(event.getServer());
+            TrapdoorNavigationRegression.run(event.getServer());
+            net.parkabird.changedsynergy.ai.PeerPlayRegression.run(event.getServer());
+            TaczSuitShootingRegression.run(event.getServer());
             loginBeforeConnection(event.getServer());
             lifecycle(event.getServer());
             humanoidGrab(event.getServer());
@@ -262,14 +291,22 @@ public final class NegotiationLifecycleRegression {
                 "Issue 8 fixture adds pigs to the actual Changed humanoids tag");
         check(hold.grabEntity(pig), "Native grab accepts a datapack-added humanoid target");
         float health = pig.getHealth(); hold.attackDown = true; hold.useDown = false; hold.tickIdle();
-        check(pig.getHealth() < health || pig.isRemoved(), "Attack input progresses assimilation on the extra humanoid");
+        check(pig.getHealth() < health || pig.isRemoved()
+                || ((net.ltxprogrammer.changed.entity.PathFinderMobDataExtension)pig).isLatexAssimilated(),
+                "Attack input progresses assimilation on the extra humanoid, including Changed Vanilla's infection");
         hold.releaseEntity(false); pig.discard();
 
         pig = net.minecraft.world.entity.EntityType.PIG.create(server.overworld());
         pig.moveTo(1, 80, 0); server.overworld().addFreshEntity(pig);
         check(hold.grabEntity(pig) && hold.suitEntity(pig), "Extra humanoid can enter the native absorption suit");
         health = pig.getHealth(); hold.attackDown = true; hold.useDown = true; hold.tickIdle();
-        check(pig.getHealth() < health || pig.isRemoved(), "Combined attack/use input progresses absorption");
+        check(pig.getHealth() < health || pig.isRemoved()
+                || ((net.ltxprogrammer.changed.entity.PathFinderMobDataExtension)pig).isLatexAssimilated(),
+                "Combined attack/use input progresses absorption, including Changed Vanilla's infection");
+        hold.releaseEntity(false); pig.discard();
+        pig = net.minecraft.world.entity.EntityType.PIG.create(server.overworld());
+        pig.moveTo(1, 80, 0); server.overworld().addFreshEntity(pig);
+        check(hold.grabEntity(pig) && hold.suitEntity(pig), "Hold-key release starts with a fresh unassimilated creature");
         hold.attackDown = hold.useDown = false;
         Field ticks = hold.getController().getClass().getDeclaredField("holdTicks"); ticks.setAccessible(true);
         ticks.setInt(hold.getController(), 40); hold.tick();

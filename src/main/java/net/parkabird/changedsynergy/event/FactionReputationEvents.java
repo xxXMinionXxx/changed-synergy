@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import net.ltxprogrammer.changed.Changed;
+import net.parkabird.changedsynergy.ChangedSynergyConfig;
 import net.ltxprogrammer.changed.entity.ChangedEntity;
 import net.ltxprogrammer.changed.entity.PlayerDataExtension;
 import net.ltxprogrammer.changed.entity.PlayerMover;
@@ -26,6 +27,7 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.Mob;
@@ -294,6 +296,15 @@ public final class FactionReputationEvents {
 
     private static void cancelProtectedEnvironmentalHazard(
             TransfurEvents.AssimilationDecisionEvent event) {
+        if (event.getTransfurVariant() != null && isEnvironmental(event.getTransfurCause())
+                && !(event.getTransfurCause() == TransfurCause.FACE_HAZARD
+                    && event.getEntity().getItemBySlot(EquipmentSlot.HEAD).getItem() instanceof DarkLatexMask)
+                && protectedFromOtherFactionEnvironment(event.getEntity(),
+                        event.getTransfurCause() == TransfurCause.WHITE_LATEX ? HunterFaction.WHITE
+                                : HunterFaction.of(event.getTransfurVariant().getEntityType()))) {
+            event.setCanceled(true);
+            return;
+        }
         if (event.getEntity() instanceof Player player
                 && event.getTransfurVariant() != null
                 && isEnvironmental(event.getTransfurCause())
@@ -309,8 +320,7 @@ public final class FactionReputationEvents {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onTerritoryLatexDamage(LivingAttackEvent event) {
         if (event.isCanceled()
-                || !(event.getEntity() instanceof ServerPlayer player)
-                || !isProtectedTerritoryDamage(player, event.getSource())) {
+                || !isProtectedTerritoryDamage(event.getEntity(), event.getSource())) {
             return;
         }
         event.setCanceled(true);
@@ -320,8 +330,7 @@ public final class FactionReputationEvents {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onTerritoryLatexHurt(LivingHurtEvent event) {
         if (event.isCanceled()
-                || !(event.getEntity() instanceof ServerPlayer player)
-                || !isProtectedTerritoryDamage(player, event.getSource())) {
+                || !isProtectedTerritoryDamage(event.getEntity(), event.getSource())) {
             return;
         }
         event.setCanceled(true);
@@ -331,16 +340,16 @@ public final class FactionReputationEvents {
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onTerritoryLatexFinalDamage(LivingDamageEvent event) {
         if (event.getAmount() > 0.0F
-                && event.getEntity() instanceof ServerPlayer player
-                && isProtectedTerritoryDamage(player, event.getSource())) {
+                && isProtectedTerritoryDamage(event.getEntity(), event.getSource())) {
             event.setAmount(0.0F);
         }
     }
 
     private static boolean isProtectedTerritoryDamage(
-            ServerPlayer player,
+            LivingEntity player,
             DamageSource source) {
         if (source.getEntity() != null
+                || source.getDirectEntity() != null
                 || !(player.level() instanceof ServerLevel)) {
             return false;
         }
@@ -352,7 +361,17 @@ public final class FactionReputationEvents {
         } else {
             return false;
         }
-        return protectedFrom(player, hazardFaction);
+        return protectedFromOtherFactionEnvironment(player, hazardFaction)
+                || player instanceof ServerPlayer serverPlayer && protectedFrom(serverPlayer, hazardFaction);
+    }
+
+    private static boolean protectedFromOtherFactionEnvironment(LivingEntity entity, HunterFaction hazard) {
+        if (!ChangedSynergyConfig.COMMON.darkWhiteEnvironmentProtection.get()) return false;
+        HunterFaction own = entity instanceof ChangedEntity creature ? HunterFaction.of(creature)
+                : entity instanceof Player player ? ProcessTransfur.getPlayerTransfurVariantSafe(player)
+                        .map(form -> HunterFaction.of(form.getChangedEntity())).orElse(null) : null;
+        return own == HunterFaction.DARK && hazard == HunterFaction.WHITE
+                || own == HunterFaction.WHITE && hazard == HunterFaction.DARK;
     }
 
     private static boolean shouldCancelEnvironmentalHazard(
@@ -406,7 +425,7 @@ public final class FactionReputationEvents {
 
     /** Uses the actual collision volume, then local territory as a fallback. */
     private static HunterFaction resolveNearbyHazardFaction(
-            ServerPlayer player) {
+            LivingEntity player) {
         HunterFaction nearby = nearestHazardFaction(player);
         if (nearby != null) {
             return nearby;
@@ -417,7 +436,15 @@ public final class FactionReputationEvents {
                 : null;
     }
 
-    private static HunterFaction nearestHazardFaction(ServerPlayer player) {
+    private static HunterFaction nearestHazardFaction(LivingEntity player) {
+        for (BlockPos position : List.of(player.blockPosition(), BlockPos.containing(player.getEyePosition()))) {
+            if (!player.level().hasChunkAt(position)) continue;
+            if (player.level().getFluidState(position).getType()
+                    instanceof net.ltxprogrammer.changed.fluid.AbstractLatexFluid fluid) {
+                if (fluid.getLatexType() == net.ltxprogrammer.changed.init.ChangedLatexTypes.WHITE_LATEX.get()) return HunterFaction.WHITE;
+                if (fluid.getLatexType() == net.ltxprogrammer.changed.init.ChangedLatexTypes.DARK_LATEX.get()) return HunterFaction.DARK;
+            }
+        }
         AABB scan = player.getBoundingBox().inflate(0.80D);
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
         HunterFaction nearest = null;

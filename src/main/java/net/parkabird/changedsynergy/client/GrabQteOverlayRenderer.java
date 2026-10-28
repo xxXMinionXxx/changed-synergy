@@ -320,9 +320,9 @@ public final class GrabQteOverlayRenderer {
             float scale = QteAnimationUtil.reducedMotion()
                     ? 1.0F
                     : progress < 0.22F
-                            ? Mth.lerp(progress / 0.22F, 1.0F, 0.82F)
+                            ? Mth.lerp(QteAnimationUtil.smooth(progress / 0.22F), 1.0F, 0.82F)
                             : Mth.lerp(
-                                    (progress - 0.22F) / 0.78F,
+                                    QteAnimationUtil.smooth((progress - 0.22F) / 0.78F),
                                     0.82F,
                                     1.14F);
             float alpha = 1.0F - QteAnimationUtil.smooth(
@@ -442,15 +442,11 @@ public final class GrabQteOverlayRenderer {
                 grabber, ChangedAbilities.GRAB_ENTITY_ABILITY.get());
         if (ability == null
                 || ability.grabbedEntity != minecraft.player
+                    && net.parkabird.changedsynergy.ai.PlayerHugService.escapePlayer(ability) != minecraft.player
                 || ability.grabbedHasControl) {
             return null;
         }
         return new GrabContext(grabber, minecraft.player, ability);
-    }
-
-    /** Prevents a canceled friendly-hug overlay from leaving a hostile QTE tail behind. */
-    public static void clearForFriendlyHold() {
-        clearImmediately();
     }
 
     private static void renderTensionBrackets(

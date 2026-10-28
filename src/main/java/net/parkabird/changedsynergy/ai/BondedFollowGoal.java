@@ -138,6 +138,7 @@ public final class BondedFollowGoal extends Goal {
         if (player == null) return false;
         var body = net.parkabird.changedsynergy.compat.TrueTransfurCompat.interactionBody(player);
         return player != null
+                && !CreaturePeerInteractionService.active(mob)
                 && body.isAlive() && !body.isRemoved() && body.level() == mob.level()
                 && !(body == player && net.parkabird.changedsynergy.compat.TrueTransfurCompat.isInstinctShell(player))
                 && !PlayerOutpostService.assigned(mob)

@@ -832,6 +832,31 @@ public final class CreaturePersonality {
         return memory != null && memory.getBoolean(RELATIONSHIP);
     }
 
+    /** First confirmed voluntary transfur is a milestone, outside repeatable daily care. */
+    public static int rewardVoluntaryTransfur(ChangedEntity mob, ServerPlayer player) {
+        if (!hasTrustedRelationship(mob, player)) return 0;
+        CompoundTag personality = data(mob);
+        String rewardsKey = "VoluntaryTransfurRewards";
+        if (!personality.contains(rewardsKey, Tag.TAG_COMPOUND)) personality.put(rewardsKey, new CompoundTag());
+        CompoundTag rewards = personality.getCompound(rewardsKey);
+        String playerId = player.getUUID().toString();
+        if (rewards.getBoolean(playerId)) return 0;
+        // Forgetting a relationship or pruning old memories cannot refill this milestone.
+        rewards.putBoolean(playerId, true);
+        CompoundTag memory = memory(mob, player, true);
+        int gain = grantGain(mob, player, memory, 20);
+        touchMemory(mob, player, memory, mob.level().getGameTime());
+        return gain;
+    }
+
+    public static boolean hasAnyFamiliarRelationship(ChangedEntity mob) {
+        for (UUID playerId : establishedRelationshipPlayerUuids(mob)) {
+            CompoundTag memory = memory(mob, playerId, false);
+            if (hasTrustedRelationship(mob, playerId) && familiarity(mob, memory) >= 12) return true;
+        }
+        return false;
+    }
+
     public static boolean hasAnyEstablishedRelationship(ChangedEntity mob) {
         if (!friendshipEnabled(mob)
                 || !CreatureSocialProfile.allowsPersonalRelationship(mob)) {
@@ -978,6 +1003,7 @@ public final class CreaturePersonality {
             ChangedEntity mob,
             ServerPlayer player,
             boolean following) {
+        CreaturePeerInteractionService.cancel(mob);
         if (!friendshipEnabled(mob)) {
             return;
         }
@@ -988,7 +1014,7 @@ public final class CreaturePersonality {
                 && canFriendFollow(mob, player)) {
             personality.putUUID(SOCIAL_PARTNER, player.getUUID());
             if (mob.getPersistentData().hasUUID("ChangedSynergyRestOwner")) SharedRestGoal.cancel(mob);
-            CreatureComfortGoal.endSeatedActivity(mob);
+            if (!CompanionSeatingService.commandedSeat(mob)) CreatureComfortGoal.endSeatedActivity(mob);
             if (mob.isSleeping()) mob.stopSleeping();
             if (ChangedSynergyGameRules.enabled(
                     mob.level(), ChangedSynergyGameRules.CREATURE_LIFE)) {

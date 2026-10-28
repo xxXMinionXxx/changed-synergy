@@ -91,6 +91,13 @@ public final class PatAnimationService {
         }
     }
 
+    public static boolean isContinuous(LivingEntity actor, LivingEntity target) {
+        if (actor.level().isClientSide) return false;
+        Session session = SESSIONS.get(actor.getUUID());
+        return session != null && session.actor == actor && session.target == target
+                && session.continuous && session.expiresAt > actor.level().getGameTime();
+    }
+
     public static void refreshContinuous(
             ServerPlayer actor,
             LivingEntity target) {

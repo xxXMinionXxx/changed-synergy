@@ -1,0 +1,333 @@
+{
+  "source": "Reviewed 2026-10-27 lore; restored five records shortened for fixed readers, 2026-10-28; three speech-adaptation revisions supplied 2026-10-28",
+  "documents": [
+    {
+      "id": "GL-02",
+      "structure": "green_lab",
+      "position": [
+        39,
+        2,
+        15
+      ],
+      "holder": "changed:clipboard",
+      "pages": [
+        "Crystal Status:\n\nContainment: OK\nIntegrty: OK\nSecurity: ONLINE"
+      ],
+      "field": "Text"
+    },
+    {
+      "id": "GL-01",
+      "structure": "green_lab",
+      "position": [
+        27,
+        2,
+        8
+      ],
+      "holder": "minecraft:lectern",
+      "pages": [
+        "Report No. 205678\n\n\nLatex Muntjac\nField Observation Log",
+        "Our latest survey of the surface populations was more fruitful than anticipated.\n\nDeep within the overgrown tropics, we encountered a shy, diminutive cervine variant that we have designated the \"Latex Muntjac.\"",
+        "Unlike the larger Latex Deer commonly seen in temperate forests, Muntjacs dwell exclusively in dense Jungles, where both male and female variants use the thick undergrowth for cover.",
+        "Notably, males possess prominent downward-curving fangs alongside short antlers. While intimidating at a glance, they mostly use them for spirited sparring matches and stripping tough bark for snacks.",
+        "When startled, they emit sharp, dog-like barks before bounding into the vines. None have agreed to visit the lab yet, so further study remains pending."
+      ],
+      "item_path": [
+        "Book"
+      ],
+      "title": "Muntjac",
+      "author": "Oroshiagito"
+    },
+    {
+      "id": "GL-06",
+      "structure": "green_lab",
+      "position": [
+        38,
+        13,
+        28
+      ],
+      "holder": "changed:cardboard_box_small",
+      "pages": [
+        "To whoever may find these notes:\n\nThere is no reason to man this post anymore. All my colleagues have either been transformed by the cure or wandered out into the wilds...",
+        "At first, their clumsy, unpracticed vocalizations made me fear their minds were gone. Look closer, though, and the truth is undeniable: their minds are still whole.\n\nIf you find this note, please remember: \"We can actually interact with them.\"",
+        "I'm heading outside to join my old friends under the trees. I've left something behind that may help you bridge the gap between us. Godspeed, my friend.",
+        "You can find this in the vault in the lower floor. For the code, just count the number of domes in this facility, and multiply by four. Repeat this number three times and you get the password."
+      ],
+      "item_path": [
+        "Items"
+      ],
+      "title": "Farewell Note",
+      "author": "Oroshiagito",
+      "item_slot": 4,
+      "source_title": "Last Will"
+    },
+    {
+      "id": "GL-07",
+      "structure": "green_lab",
+      "position": [
+        24,
+        14,
+        30
+      ],
+      "holder": "changed:clipboard",
+      "pages": [
+        "Writing with paws is harder than it looks.\n\nWHITE FLOOR: 0/10 (Too sticky)\nWOLF PAWS: 10/10\n\n:D"
+      ],
+      "field": "Text"
+    },
+    {
+      "id": "GL-08",
+      "structure": "green_lab",
+      "position": [
+        24,
+        14,
+        31
+      ],
+      "holder": "minecraft:chiseled_bookshelf",
+      "pages": [
+        "Everyone feared that \"transfurring\" would erase who we are, leaving only a hollow beast behind. \n\nToday, I proved that theory wrong: you keep your full consciousness and memories in the new body.",
+        "To test it safely, I collected a sample from a docile Gas Latex strain. \n\nThey have always been gentle around baseline staff, provided no one startles them.",
+        "I catalyzed and stabilized the sample in the lab. Even knowing the theoretical safety margins, I took every precaution before proceeding.",
+        "Using a pressurized canister and a modified diffuser, I applied the stabilized aerosol directly to myself.\n\nThe transition was a complete success!",
+        "A sleek new lupine body—no aching joints, no fatigue, and my mind is as sharp as ever. I love it!\n\nReversing the process? Why would I rush to do that?",
+        "Wait—my ears won't stop twitching at the air vent, and shaping words with an unfamiliar lupine muzzle takes real practice; half my sentences still slip into barks.\n\nAlso, why does my tail start wagging every time I think about lunch?!",
+        "Hold on, I think I can hear the others projecting thoughts from down the hall. I'm going to go say hello!\n\n*The rest of the page is smudged with excited pawprints..."
+      ],
+      "item_path": [
+        "Items"
+      ],
+      "title": "A Doctor's Note",
+      "author": "Oroshiagito",
+      "item_slot": 1,
+      "source_title": "A Doctor's Note"
+    },
+    {
+      "id": "AQ-02",
+      "structure": "water_tower_changed",
+      "position": [
+        39,
+        6,
+        51
+      ],
+      "holder": "changed:clipboard",
+      "pages": [
+        "We found this strange specimen in an underwater temple... Being near it makes our minds hum with distant thoughts, and everyone in the lab has been Raid-the-Pantry hungry all week..."
+      ],
+      "field": "Text"
+    },
+    {
+      "id": "AQ-04",
+      "structure": "water_tower_changed",
+      "position": [
+        60.5,
+        6.03125,
+        32.5
+      ],
+      "holder": "minecraft:item_frame",
+      "pages": [
+        "### Log Fragment // Sector Security\n\nWe knew the cure would change everything, and yet nobody expected the facility to empty out so quickly once everyone realized they didn't need desks anymore...\n\nFor anyone else still checking the vaults, the first part of the code is **1029**...\n\nPerhaps you can find the rest of the code somewhere else in the sector."
+      ],
+      "item_path": [
+        "Item"
+      ]
+    },
+    {
+      "id": "AQ-05",
+      "structure": "water_tower_changed",
+      "position": [
+        64.5,
+        15.03125,
+        23.5
+      ],
+      "holder": "minecraft:item_frame",
+      "pages": [
+        "# Project No. 125690\n\n### Stasis Conversion Summary\nInducing colloidal transformation via stasis chambers is entirely viable. However, early observers mistook the aftermath for amnesia or a \"loss of consciousness\" because newly converted subjects struggle to articulate clear speech through their unfamiliar vocal structures, often slipping into animal vocalizations out of frustration.\n\nFurther testing confirmed their memories and personalities remain **100% intact**—they simply need time to adapt to their new muzzles and vocal cords."
+      ],
+      "item_path": [
+        "Item"
+      ]
+    },
+    {
+      "id": "AQ-06",
+      "structure": "water_tower_changed",
+      "position": [
+        28,
+        16,
+        11
+      ],
+      "holder": "minecraft:chiseled_bookshelf",
+      "pages": [
+        "Homogeneity Research:\n\nMany White Latex entities possess a unique physical trait that we simply call \"Homogeneity.\"",
+        "There are two peculiar aspects of this ability to keep in mind.\n\nFirst, they can sense surface vibrations from anyone walking across White Latex blocks or large puddles.",
+        "Second, they can seamlessly melt and \"swim\" through White Latex pools. Half of our maintenance crew got playfully ambushed and pulled into their collective nap-pile during routine pipe checks.\n\nIt took a lot of work to 'pull' our transformed colleagues back out.",
+        "Their smooth, eyeless faces make long-range sight poor away from their own resin network. Once outside their territory, however, they can grow eyes to see their surroundings."
+      ],
+      "item_path": [
+        "Items"
+      ],
+      "title": "Homogeneity",
+      "author": "Oroshiagito",
+      "item_slot": 1,
+      "source_title": "Homogeneity"
+    },
+    {
+      "id": "AQ-07",
+      "structure": "water_tower_changed",
+      "position": [
+        38,
+        16,
+        16
+      ],
+      "holder": "minecraft:chiseled_bookshelf",
+      "pages": [
+        "Latex beings are known for peculiar physical capabilities that far surpass baseline humans.",
+        "Some have keen senses or tremendous leaping power, while others can glide, breathe underwater, or maintain a centaur-like physique.",
+        "However, certain aquatic individuals possess such overwhelming presence and coordination that our staff nicknamed them \"Bosses\" among their kin.",
+        "The Latex Tiger Shark is a prime example.\n\nAlongside immense strength and swimming speed, it can project a rallying call to summon smaller Latex Sharks to help corner a human guest...",
+        "Further study is needed on how this coordination works.\n\nMaintaining that much active mass clearly burns tremendous energy. Is that why they are so eager to host with a stable human frame?",
+        "We haven't convinced a Tiger Shark to sit still for an interview yet, but the question remains...\n\nCould an alliance with these aquatic leaders help us navigate the deep seas?"
+      ],
+      "item_path": [
+        "Items"
+      ],
+      "title": "\"Boss\" Latex",
+      "author": "Oroshiagito",
+      "item_slot": 1,
+      "source_title": "\"Boss\" Latex"
+    },
+    {
+      "id": "AQ-09",
+      "structure": "water_tower_changed",
+      "position": [
+        38.5,
+        16.03125,
+        9.5
+      ],
+      "holder": "minecraft:item_frame",
+      "pages": [
+        "# Report No. 2386-S\n**Subject:** Aquatic Lineage Behavior (*Latex Shark*)\n\nLatex Sharks may look relaxed while floating in the tanks, but deep-water swimming burns massive amounts of energy. Because a baseline human body offers rare **metabolic stability**, an unannounced human swimmer triggers their immediate instinct to pounce and transfur on contact.\n\nUnless you are ready to spend the afternoon with fins and gills, it is strongly advised to keep a safe distance—ideally with a thick glass wall in between."
+      ],
+      "item_path": [
+        "Item"
+      ]
+    },
+    {
+      "id": "AQ-10",
+      "structure": "water_tower_changed",
+      "position": [
+        46.5,
+        16.03125,
+        51.5
+      ],
+      "holder": "minecraft:item_frame",
+      "pages": [
+        "# Research No. 4587-F\n**Subject:** Dual-Morphology \"Fusions\"\n\nColloidal beings do not merely adopt single animal silhouettes. Recent observations confirm that when two distinct strains—or two close companions—merge their matrices, they can stabilize into a combined hybrid form exhibiting traits of two species at once.\n\nWe have decided to call these rare individuals **\"Fusions.\"** One such resident is currently resting in the adjacent containment bay..."
+      ],
+      "item_path": [
+        "Item"
+      ]
+    },
+    {
+      "id": "AQ-14",
+      "structure": "water_tower_changed",
+      "position": [
+        43,
+        34,
+        33
+      ],
+      "holder": "minecraft:chest",
+      "pages": [
+        "# TOP SECRET // Swordfish Research\n\n### Morphological Overview\nRecent deep-basin surveys have documented a specialized pelagic variant we have designated the **\"Latex Swordfish.\"**\n\n* **Hydrodynamic Rostrum:** By hardening the colloidal matrix along its extended upper bill, the Latex Swordfish slashes water drag to near zero, propelling itself through flooded corridors at breathtaking speeds.\n* **Facility Hazard Note:** While graceful in open water, they have a terrible habit of forgetting how long their noses are on dry land. Maintenance has already replaced four dented elevator doors and six punctured drywall panels this month alone."
+      ],
+      "loot_table": "changed_synergy:chests/swordfish_research"
+    },
+    {
+      "id": "AQ-15",
+      "structure": "water_tower_changed",
+      "position": [
+        46.5,
+        34.03125,
+        35.5
+      ],
+      "holder": "minecraft:item_frame",
+      "pages": [
+        "# TOP SECRET // Marine Adaptation Log\n\nUpon recent discovery, we found that colloidal lineages are far more adaptable to extreme environments than previously thought. While the **Dark Latex** remain strictly terrestrial and aerial, several other surface variants have developed siren-like tails and fins, trading the forests for the open seas.\n\nJust how many new shapes will this young world invent as it grows?"
+      ],
+      "item_path": [
+        "Item"
+      ]
+    },
+    {
+      "id": "BLANK-01",
+      "structure": "white_lab_tower",
+      "position": [
+        8,
+        13,
+        8
+      ],
+      "holder": "changed:clipboard",
+      "pages": [
+        "Housekeeping Note:\n\nIf a White Latex puddle is blocking the hallway, just ask politely. Stepping on them starts a three-hour gossip."
+      ],
+      "field": "Text"
+    },
+    {
+      "id": "BLANK-02",
+      "structure": "red_lab_tower",
+      "position": [
+        28,
+        18,
+        7
+      ],
+      "holder": "changed:note",
+      "pages": [
+        "Whoever keeps hiding snacks in the air ducts: the wolf pups found your stash three days ago."
+      ],
+      "field": "Text"
+    },
+    {
+      "id": "BLANK-03",
+      "structure": "red_lab_tower",
+      "position": [
+        24,
+        34,
+        30
+      ],
+      "holder": "changed:clipboard",
+      "pages": [
+        "CRISSCROSS // MAINTENANCE MEMO\n\nTechnology: The backup generator on this floor is running on sheer stubbornness.\nHumanity: Be nice to it! It's trying its best!"
+      ],
+      "field": "Text"
+    },
+    {
+      "id": "BLANK-04",
+      "structure": "green_lab",
+      "position": [
+        15,
+        3,
+        23
+      ],
+      "holder": "minecraft:chest",
+      "pages": [
+        "# Botanical Sync Log // Sector G\n\nPreliminary tests show that ambient **Dust** has already stabilized the greenhouse flora. Even if the automated sprinklers fail in a few centuries, the orange trees should keep bearing fruit for any wanderers who pass through."
+      ],
+      "item_path": [
+        "Items"
+      ],
+      "item_slot": 25
+    },
+    {
+      "id": "WL-06",
+      "structure": "white_lab_tower",
+      "position": [
+        30,
+        25,
+        15
+      ],
+      "holder": "changed:clipboard",
+      "pages": [
+        "Study No. 342G\n\nThe latex are evolving. We saw them mimicking plants, but they are now mimicking... YouTubers...?"
+      ],
+      "field": "Text"
+    }
+  ]
+}

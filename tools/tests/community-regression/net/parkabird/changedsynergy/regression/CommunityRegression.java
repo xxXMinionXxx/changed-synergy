@@ -10,6 +10,11 @@ public final class CommunityRegression {
     @SubscribeEvent public static void run(ServerStartedEvent event) {
         boolean loadRunning = false;
         try {
+            if (Boolean.getBoolean("changed_synergy.serverLoadOnly")) {
+                ServerLoadRegression.start(event.getServer());
+                loadRunning = true;
+                return;
+            }
             FacilityTemplateRegression.run();
             boolean success = check(() -> HypnosisPlayerRegression.run(event.getServer()));
             success &= check(() -> RescueWrapRegression.run(event.getServer()));

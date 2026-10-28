@@ -1,0 +1,13 @@
+// Freeze the verified UI source while unrelated relationship-panel work continues in the checkout.
+gradle.beforeProject { project ->
+    project.layout.buildDirectory.set(project.file('.codex-tmp/wheel-brightness-final-build'))
+    project.afterEvaluate {
+        project.sourceSets.main.java.setSrcDirs([project.file('.codex-tmp/wheel-brightness-snapshot/java')])
+        project.sourceSets.main.resources.setSrcDirs([project.file('.codex-tmp/wheel-brightness-snapshot/resources')])
+        def classes = project.file('.codex-tmp/wheel-brightness-final-build/classes/java/main')
+        project.sourceSets.main.java.destinationDirectory.set(classes)
+        project.sourceSets.main.output.classesDirs = project.files(classes)
+        project.tasks.named('compileJava').configure { destinationDirectory.set(classes) }
+        project.tasks.withType(org.gradle.jvm.tasks.Jar).configureEach { duplicatesStrategy = org.gradle.api.file.DuplicatesStrategy.EXCLUDE }
+    }
+}

@@ -26,6 +26,7 @@ public final class ChangedSpawnPlacementContext {
                 || reason == MobSpawnType.CHUNK_GENERATION;
         boolean changedCreature = id != null
                 && ("changed".equals(id.getNamespace())
+                        || "changed_synergy".equals(id.getNamespace())
                         || "changed_addon".equals(id.getNamespace())
                         || "changed_additions".equals(id.getNamespace()));
         ACTIVE.get().push(natural && changedCreature);

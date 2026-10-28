@@ -55,6 +55,9 @@ public final class PlayerRelationshipScreen
     private int contactHeaderX = -1;
     private int contactHeaderY;
     private int contactHeaderWidth;
+    private float contactHeaderScale = 1;
+
+    private final long panelsOpenedAt = System.nanoTime();
 
     public PlayerRelationshipScreen(
             PlayerRelationshipMenu menu,
@@ -164,7 +167,7 @@ public final class PlayerRelationshipScreen
                         + (selected ? "_selected/" : "/") + section + ".png");
         graphics.setColor(red, green, blue,
                 RadialWheelAnimations.layerAlpha(this));
-        graphics.blit(texture, (int)x - 32 + leftPos, (int)y - 32 + topPos,
+        RadialWheelAnimations.drawFrame(this, graphics, texture, (int)x - 32 + leftPos, (int)y - 32 + topPos,
                 0.0F, 0.0F, 64, 64, 64, 64);
         graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
     }
@@ -187,6 +190,7 @@ public final class PlayerRelationshipScreen
         }
         Action action = actionFor(section);
         ResourceLocation icon = action.texture();
+        if (action.command().equals("rally_boarding")) icon = CompanionSeatIcons.resolve(icon);
         int centerX = (int)x + leftPos;
         int centerY = (int)y + topPos;
         if (section == 0 && menu.outpostAction().equals("link_outpost")) {
@@ -248,6 +252,7 @@ public final class PlayerRelationshipScreen
             case "help" -> "request_help";
             case "mediate" -> "mediate";
             case "damage_filter" -> "cycle_damage_filter";
+            case "rally_boarding" -> "rally_boarding";
             default -> "";
         });
         Contact contact = currentContact();
@@ -260,6 +265,8 @@ public final class PlayerRelationshipScreen
 
     private Action actionFor(int section) {
         if(section>=baseActionCount())return emote(section==baseActionCount()?"role_name":"role_emotes",section==baseActionCount()?"idea":"heart");
+        if(menu.canRallyBoarding() && section==2)return new Action("rally_boarding",
+                CompanionSeatIcons.id(true),CompanionSeatIcons.SIZE);
         int index=menu.isTransfurred()&&section>=6?section+1:section;
         return section == 4 && menu.usesAbsorptionNegotiationSlot()
                 ? ABSORPTION_NEGOTIATION : ACTIONS.get(index);
@@ -267,14 +274,12 @@ public final class PlayerRelationshipScreen
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0 && contactHeaderX >= 0
-                && mouseY >= contactHeaderY + 3 && mouseY < contactHeaderY + 18) {
-            int offset = (int)mouseX - (contactHeaderX + contactHeaderWidth - 56);
-            if (offset >= 0 && offset < 52 && offset % 18 < 16) {
+        int contactButton = contactButtonAt(mouseX, mouseY);
+        if (button == 0 && contactButton >= 0) {
                 Contact contact = currentContact();
                 if (contact != null) {
                     playClick();
-                    switch (offset / 18) {
+                    switch (contactButton) {
                         case 0 -> cycleContact(-1);
                         case 1 -> cycleContact(1);
                         case 2 -> {
@@ -287,9 +292,15 @@ public final class PlayerRelationshipScreen
                     }
                 }
                 return true;
-            }
         }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    private int contactButtonAt(double mouseX, double mouseY) {
+        if (contactHeaderX < 0 || mouseY < contactHeaderY + 3 * contactHeaderScale
+                || mouseY >= contactHeaderY + 18 * contactHeaderScale) return -1;
+        double offset = (mouseX - contactHeaderX - contactHeaderWidth) / contactHeaderScale + 56;
+        return offset >= 0 && offset < 52 && offset % 18 < 16 ? (int)offset / 18 : -1;
     }
 
     private void cycleContact(int direction) {
@@ -313,12 +324,8 @@ public final class PlayerRelationshipScreen
 
     private void renderManagerCards(GuiGraphics graphics, int mouseX, int mouseY) {
         contactHeaderX = -1;
-        float wheelOffset = RadialWheelAnimations.horizontalOffset(this);
         float socialOffset = socialWheelOffset();
-        float panelProgress = socialOffset <= 0.0F
-                ? 1.0F : clamp01(wheelOffset / socialOffset);
-        float alpha = RadialWheelAnimations.overallAlpha(this)
-                * smoothStep(panelProgress);
+        float alpha = RadialWheelAnimations.panelAlpha(this);
         if (alpha <= 0.01F) {
             return;
         }
@@ -427,34 +434,50 @@ public final class PlayerRelationshipScreen
         int x = 14;
         int wheelLeft = Math.round(width * 0.5F
                 + socialOffset - 128.0F);
-        int availableWidth = Math.max(108, wheelLeft - x - 12);
-        int cardWidth = Math.min(width >= 800 ? 260 : 214, availableWidth);
-        int textWidth = Math.max(90, cardWidth - 18);
-        List<PreparedCard> prepared = cards.stream()
-                .map(card -> prepareCard(card, textWidth))
-                .toList();
-        int gap = 6;
+        int availableWidth = Math.max(1, wheelLeft - x - 12);
+        int cardWidth = RelationshipPanel.CARD_WIDTH;
+        int textWidth = cardWidth - 26;
+        List<PreparedCard> prepared = new ArrayList<>();
+        for (int index = 0; index < cards.size(); index++) {
+            prepared.add(prepareCard(cards.get(index), textWidth));
+        }
+        int gap = 10;
         int totalHeight = prepared.stream().mapToInt(PreparedCard::height).sum()
                 + gap * (prepared.size() - 1);
-        int y = Math.max(10, (height - totalHeight) / 2);
-        int accent = panelAccent();
+        float panelScale = Math.min(1, Math.max(0.01F,
+                // Leave clearance for the bottom switch hint and native key badges.
+                Math.min((height - 56F) / totalHeight, availableWidth / (float)cardWidth)));
+        int y = Math.max(10, (height - Math.round(totalHeight * panelScale)) / 2);
+        graphics.pose().pushPose();
+        graphics.pose().translate(x, y, 0);
+        graphics.pose().scale(panelScale, panelScale, 1);
+        int cardY = 0;
         for (int index = 0; index < prepared.size(); index++) {
             PreparedCard card = prepared.get(index);
-            renderInfoCard(graphics, card, x, y, cardWidth, accent, alpha,
-                    index == 1);
-            if (index == 1) {
-                contactHeaderX = x;
-                contactHeaderY = y;
-                contactHeaderWidth = cardWidth;
-                renderContactControls(graphics, x, y, cardWidth, alpha, mouseX, mouseY);
+            float entrance = UiMotion.entrance(panelsOpenedAt, index);
+            float cardAlpha = alpha * UiSpring.clamp(entrance);
+            int slide = UiMotion.reduced() ? 0 : Math.round(-12 * (1 - entrance));
+            int cardX = slide;
+            RelationshipPanel.CardStyle style = switch (index) {
+                case 0 -> RelationshipPanel.CardStyle.STATUS;
+                case 1 -> RelationshipPanel.CardStyle.CONTACTS;
+                default -> RelationshipPanel.CardStyle.LOCATION;
+            };
+            renderInfoCard(graphics, card, cardX, cardY, cardWidth, cardAlpha, style);
+            if (index == 1 && cardAlpha > 0.1F) {
+                contactHeaderX = x + Math.round(cardX * panelScale);
+                contactHeaderY = y + Math.round(cardY * panelScale);
+                contactHeaderWidth = Math.round(cardWidth * panelScale);
+                contactHeaderScale = panelScale;
+                renderContactControls(graphics, cardX, cardY, cardWidth, cardAlpha,
+                        Math.round((mouseX - x) / panelScale), Math.round((mouseY - y) / panelScale));
             }
-            y += card.height() + gap;
+            cardY += card.height() + gap;
         }
-        if (contactHeaderX >= 0 && mouseY >= contactHeaderY + 3
-                && mouseY < contactHeaderY + 18) {
-            int offset = mouseX - (contactHeaderX + contactHeaderWidth - 56);
-            if (offset >= 0 && offset < 52 && offset % 18 < 16) {
-                String key = switch (offset / 18) {
+        graphics.pose().popPose();
+        int contactButton = contactButtonAt(mouseX, mouseY);
+        if (contactButton >= 0) {
+                String key = switch (contactButton) {
                     case 0 -> "menu.changed_synergy.relationship.info.contacts.previous";
                     case 1 -> "menu.changed_synergy.relationship.info.contacts.next";
                     default -> currentContact() != null && currentContact().bonded()
@@ -462,7 +485,6 @@ public final class PlayerRelationshipScreen
                             : "menu.changed_synergy.relationship.info.contacts.remove";
                 };
                 graphics.renderTooltip(font, Component.translatable(key), mouseX, mouseY);
-            }
         }
     }
 
@@ -470,6 +492,9 @@ public final class PlayerRelationshipScreen
                                        int cardWidth, float alpha, int mouseX, int mouseY) {
         int start = x + cardWidth - 56;
         boolean enabled = currentContact() != null;
+        int normalColor = panelTitleColor();
+        int hoverColor = Color3.fromInt(panelBackground()).brightness() <= 0.5F
+                ? 0xFFF2A0 : 0x675000;
         String[] labels = {"<", ">", "x"};
         for (int index = 0; index < labels.length; index++) {
             int buttonX = start + index * 18;
@@ -477,24 +502,13 @@ public final class PlayerRelationshipScreen
                     && mouseY >= y + 3 && mouseY < y + 18;
             // The lowercase x has a shorter glyph than the arrows; align their visible centres.
             graphics.drawString(font, labels[index], buttonX + (16 - font.width(labels[index])) / 2, y + (index == 2 ? 6 : 7),
-                    withAlpha(!enabled ? 0x888888 : hovered ? 0xFFF2A0 : 0xFFFFFF,
+                    withAlpha(!enabled ? 0x888888 : hovered ? hoverColor : normalColor,
                             Math.round(0xF0 * alpha)), false);
         }
     }
 
     private float socialWheelOffset() {
-        float desired = Math.min(220.0F, width * 0.22F);
-        float roomAtRight = Math.max(0.0F, width * 0.5F - 136.0F);
-        return Math.min(desired, roomAtRight);
-    }
-
-    private static float clamp01(float value) {
-        return Math.max(0.0F, Math.min(1.0F, value));
-    }
-
-    private static float smoothStep(float value) {
-        float clamped = clamp01(value);
-        return clamped * clamped * (3.0F - 2.0F * clamped);
+        return RadialWheelAnimations.layoutOffset(width);
     }
 
     private Component currentForm() {
@@ -524,7 +538,7 @@ public final class PlayerRelationshipScreen
         HunterFaction faction = HunterFaction.of(
                 variant.getParent().getEntityType());
         return faction == null ? null
-                : Component.translatable(faction.translationKey());
+                : Component.translatable(faction.translationKey()).withStyle(style -> style.withColor(UiMotion.factionColor(faction)));
     }
 
     private static Component entityName(String typeId) {
@@ -543,7 +557,7 @@ public final class PlayerRelationshipScreen
             lines.addAll(font.split(line, textWidth));
         }
         return new PreparedCard(card.title(), List.copyOf(lines),
-                27 + lines.size() * 9);
+                RelationshipPanel.GEL_TEXT_PADDING + Math.max(1, lines.size()) * 9);
     }
 
     private void renderInfoCard(
@@ -552,28 +566,43 @@ public final class PlayerRelationshipScreen
             int x,
             int y,
             int cardWidth,
-            int accent,
             float alpha,
-            boolean contactControls) {
-        graphics.fill(x, y, x + cardWidth, y + card.height(),
-                withAlpha(0x373737, Math.round(0xD0 * alpha)));
-        graphics.fill(x, y, x + 3, y + card.height(),
-                withAlpha(accent, Math.round(0xF0 * alpha)));
-        graphics.fill(x + 3, y, x + cardWidth, y + 1,
-                withAlpha(0xFFFFFF, Math.round(0x88 * alpha)));
+            RelationshipPanel.CardStyle style) {
+        if (alpha <= 0.02F) return;
+        boolean contactControls = style == RelationshipPanel.CardStyle.CONTACTS;
+        int foreground = panelTitleColor();
+        RelationshipPanel.drawCard(graphics, x, y, style, menu.usesOrganicStyle(),
+                card.height(), panelBackground(), foreground, alpha);
         graphics.drawString(font, font.plainSubstrByWidth(
                         card.title().getString(),
-                        Math.max(20, cardWidth - (contactControls ? 70 : 18))),
-                x + 9, y + 7,
-                withAlpha(accent, Math.round(0xFF * alpha)), true);
-        graphics.fill(x + 9, y + 19, x + cardWidth - 8, y + 20,
-                withAlpha(0x8B8B8B, Math.round(0xA0 * alpha)));
-        int lineY = y + 23;
+                        Math.max(1, cardWidth - (contactControls ? 82 : 34))),
+                x + 25, y + 7,
+                withAlpha(foreground, Math.round(0xFF * alpha)), false);
+        int padding = RelationshipPanel.GEL_TEXT_PADDING;
+        int bodyForeground = menu.usesOrganicStyle() ? 0x000000 : RelationshipPanel.bodyTextColor(panelBackground());
+        float textScale = Math.min(1, (card.height() - padding) / (Math.max(1, card.lines().size()) * 9F));
+        graphics.pose().pushPose();
+        graphics.pose().translate(x + 13, y + RelationshipPanel.GEL_TOP, 0);
+        graphics.pose().scale(textScale, textScale, 1);
+        int lineY = 0;
         for (FormattedCharSequence line : card.lines()) {
-            graphics.drawString(font, line, x + 9, lineY,
-                    withAlpha(0xFFFFFF, Math.round(0xEC * alpha)), false);
+            graphics.drawString(font, line, 0, lineY,
+                    withAlpha(bodyForeground, Math.round(0xFF * alpha)), false);
             lineY += 9;
         }
+        graphics.pose().popPose();
+    }
+
+    private int panelBackground() {
+        if (menu.usesOrganicStyle()) return INVENTORY_FACE.toInt();
+        return AbstractRadialScreen.getColors(ProcessTransfur.getPlayerTransfurVariant(
+                minecraft.player)).background().toInt();
+    }
+
+    private int panelTitleColor() {
+        if (menu.usesOrganicStyle()) return 0x404040;
+        return Color3.fromInt(panelBackground()).brightness() > 0.5F
+                ? 0x222222 : panelAccent();
     }
 
     private int panelAccent() {
@@ -592,11 +621,10 @@ public final class PlayerRelationshipScreen
         int textWidth = font.width(hint);
         float scale = Math.min(1.0F, (width - 20.0F) / Math.max(1,textWidth));
         float alpha = RadialWheelAnimations.overallAlpha(this);
+        if (alpha <= 0.02F) return;
         graphics.pose().pushPose();
         graphics.pose().translate((width - textWidth * scale) / 2.0F,y,0);
         graphics.pose().scale(scale,scale,1);
-        graphics.fill(-5, -3, textWidth + 5, 11,
-                Math.round(0x78 * alpha) << 24);
         graphics.drawString(font, hint, 0, 0,
                 Math.round(0xF0 * alpha) << 24 | 0x00FFFFFF, true);
         graphics.pose().popPose();

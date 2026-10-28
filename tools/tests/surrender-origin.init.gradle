@@ -1,0 +1,10 @@
+gradle.beforeProject { project ->
+    project.layout.buildDirectory.set(project.file('.codex-tmp/surrender-origin-build'))
+    project.afterEvaluate {
+        project.sourceSets.main.java.srcDir(project.file('tools/tests/surrender-origin'))
+        def classes = project.file('.codex-tmp/surrender-origin-build/classes/java/main')
+        project.sourceSets.main.java.destinationDirectory.set(classes)
+        project.sourceSets.main.output.classesDirs = project.files(classes)
+        project.tasks.named('compileJava').configure { destinationDirectory.set(classes) }
+    }
+}

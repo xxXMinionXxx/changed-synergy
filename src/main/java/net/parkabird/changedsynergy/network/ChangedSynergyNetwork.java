@@ -8,7 +8,7 @@ import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 
 public final class ChangedSynergyNetwork {
-    private static final String PROTOCOL = "48";
+    private static final String PROTOCOL = "56";
     public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
             ResourceLocation.fromNamespaceAndPath(ChangedSynergyMod.MOD_ID, "network"),
             () -> PROTOCOL, PROTOCOL::equals, PROTOCOL::equals);
@@ -22,6 +22,20 @@ public final class ChangedSynergyNetwork {
             return;
         }
         registered = true;
+        CHANNEL.registerMessage(40, PlayerHugActionPacket.class, PlayerHugActionPacket::encode,
+                PlayerHugActionPacket::decode, PlayerHugActionPacket::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(41, PlayerHugStatePacket.class, PlayerHugStatePacket::encode,
+                PlayerHugStatePacket::decode, PlayerHugStatePacket::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(38, CompanionSeatInputPacket.class, CompanionSeatInputPacket::encode,
+                CompanionSeatInputPacket::decode, CompanionSeatInputPacket::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(39, CompanionSeatStatePacket.class, CompanionSeatStatePacket::encode,
+                CompanionSeatStatePacket::decode, CompanionSeatStatePacket::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(36, ChasePlayInputPacket.class, ChasePlayInputPacket::encode,
+                ChasePlayInputPacket::decode, ChasePlayInputPacket::handle, Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(37, ChasePlayStatePacket.class, ChasePlayStatePacket::encode,
+                ChasePlayStatePacket::decode, ChasePlayStatePacket::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(35, SilkMothWingFlapPacket.class, SilkMothWingFlapPacket::encode,
+                SilkMothWingFlapPacket::decode, SilkMothWingFlapPacket::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(34, NativeRoleplayStatePacket.class, NativeRoleplayStatePacket::encode,
                 NativeRoleplayStatePacket::decode, NativeRoleplayStatePacket::handle, Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(33, ServerConfigSnapshotPacket.class, ServerConfigSnapshotPacket::encode,

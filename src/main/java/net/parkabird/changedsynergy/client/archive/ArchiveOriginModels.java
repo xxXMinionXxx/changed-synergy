@@ -205,6 +205,7 @@ public final class ArchiveOriginModels {
             float yaw, float pitch, float zoom, boolean crouch, boolean portrait) {
         LivingEntity entity = entity(entry);
         if (entity == null || width <= 0 || height <= 0) return;
+        if (portrait && entity instanceof net.parkabird.changedsynergy.entity.LatexSwordfish) yaw = 18;
         ResourceLocation form = entry == null ? null : entry.form();
         if (failed.contains(form)) return;
         Minecraft minecraft = Minecraft.getInstance();
@@ -226,7 +227,9 @@ public final class ArchiveOriginModels {
             entity.setPose(crouch ? Pose.CROUCHING : Pose.STANDING);
             String geometryKey = String.valueOf(form) + ":" + portrait + ":" + crouch;
             Bounds bounds = geometry.computeIfAbsent(geometryKey, ignored -> modelBounds(entity, portrait));
-            float scale = Math.min(width * 0.86f / Math.max(0.1f, portrait ? bounds.width() : Math.max(bounds.width(), bounds.depth())),
+            float portraitWidth = bounds.width() * Math.abs(Mth.cos(yaw * Mth.DEG_TO_RAD))
+                    + bounds.depth() * Math.abs(Mth.sin(yaw * Mth.DEG_TO_RAD));
+            float scale = Math.min(width * 0.86f / Math.max(0.1f, portrait ? portraitWidth : Math.max(bounds.width(), bounds.depth())),
                     height * (portrait ? 0.83f : 0.91f) / Math.max(0.1f, bounds.height())) * Mth.clamp(zoom, 0.45f, 2.5f);
             Quaternionf rotation = new Quaternionf().rotateZ((float)Math.PI).rotateX(pitch * Mth.DEG_TO_RAD).rotateY(yaw * Mth.DEG_TO_RAD);
             Vector3f center = rotation.transform(new Vector3f(-bounds.centerX(), 1.501f - bounds.centerY(), bounds.centerZ()));

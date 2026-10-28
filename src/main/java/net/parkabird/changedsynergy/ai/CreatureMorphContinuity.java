@@ -75,6 +75,12 @@ public final class CreatureMorphContinuity {
                 || net.parkabird.changedsynergy.compat.TrueTransfurCompat.isInstinctBody(previous)
                 || net.parkabird.changedsynergy.compat.TrueTransfurCompat.isInstinctBody(replacement)) return;
         UUID previousId = previous.getUUID();
+        CreaturePeerInteractionService.cancel(previous);
+        boolean interruptedMeal=CompanionAutoEatGoal.active(previous);
+        if (interruptedMeal) {
+            CompanionAutoEatGoal.cleanup(previous);
+            replacement.setItemInHand(net.minecraft.world.InteractionHand.OFF_HAND,previous.getOffhandItem().copy());
+        }
         UUID replacementId = replacement.getUUID();
         // Fusion events and the common replacement hook can observe the same morph.
         if (CreatureMorphAliasData.get(level.getServer()).resolveAlias(previousId).equals(replacementId)) return;
@@ -99,6 +105,7 @@ public final class CreatureMorphContinuity {
         copyTag(source, target, FACILITY_ORANGE_ROOM);
         copyTag(source, target, FACILITY_STORAGE_POS);
         copyCompound(source, target, BONDED_INVENTORY);
+        if (interruptedMeal) CompanionAutoEatGoal.transferMealInventory(previous,replacement);
         for (String key : java.util.List.of("ChangedSynergyPlayerOutpostWorkBag",
                 "ChangedSynergyPlayerOutpostCargo", "ChangedSynergyPlayerOutpostWorkOutput",
                 "ChangedSynergyPlayerOutpostFarmBatch", "ChangedSynergyPlayerOutpostHaulBatch")) {

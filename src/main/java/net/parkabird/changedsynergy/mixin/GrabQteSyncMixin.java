@@ -40,7 +40,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /** Keeps the prompt rendered by the client aligned with the key checked by the server. */
 @Mixin(value = GrabEntityAbilityInstance.class, remap = false)
-public abstract class GrabQteSyncMixin extends AbstractAbilityInstance {
+public abstract class GrabQteSyncMixin extends AbstractAbilityInstance
+        implements net.parkabird.changedsynergy.ai.GrabEscapeState {
     @Shadow(remap = false)
     @Nullable
     public LivingEntity grabbedEntity;
@@ -66,6 +67,35 @@ public abstract class GrabQteSyncMixin extends AbstractAbilityInstance {
     @Shadow(remap = false)
     public boolean suited;
 
+    @Shadow(remap = false) protected abstract KeyReference getNextEscapeKey();
+    @Unique private long changedSynergy$escapeSeed;
+    @Unique private int changedSynergy$escapeDraws;
+    @Unique private int changedSynergy$escapeTick = Integer.MIN_VALUE;
+    @Unique private LivingEntity changedSynergy$escapeTarget;
+    @Unique private long changedSynergy$lastKeySync = Long.MIN_VALUE;
+
+    @Override public long changedSynergy$escapeSeed() { return changedSynergy$escapeSeed; }
+    @Override public int changedSynergy$escapeDraws() { return changedSynergy$escapeDraws; }
+    @Override public void changedSynergy$restoreEscape(long seed, int draws) {
+        if (escapeKeyRandom == null || changedSynergy$escapeSeed != seed || changedSynergy$escapeDraws > draws) {
+            escapeKeyRandom = RandomSource.create(seed);
+            changedSynergy$escapeSeed = seed;
+            changedSynergy$escapeDraws = 0;
+        }
+        while (changedSynergy$escapeDraws < draws) getNextEscapeKey();
+    }
+
+    @Inject(method = "initializeEscape", at = @At("HEAD"), remap = false)
+    private void changedSynergy$rememberSeed(long seed, CallbackInfo callback) {
+        changedSynergy$escapeSeed = seed;
+        changedSynergy$escapeDraws = 0;
+    }
+
+    @Inject(method = "getNextEscapeKey", at = @At("RETURN"), remap = false)
+    private void changedSynergy$countEscapeDraw(CallbackInfoReturnable<KeyReference> callback) {
+        changedSynergy$escapeDraws++;
+    }
+
     @Unique private boolean changedSynergy$harmlessRelease;
     @Unique private int changedSynergy$friendlyHoldTicks;
     @Unique private int changedSynergy$lastFriendlyHoldTick = Integer.MIN_VALUE;
@@ -86,6 +116,16 @@ public abstract class GrabQteSyncMixin extends AbstractAbilityInstance {
     /** A safe social hold must expire even if Addon's grab-AI flag is disabled mid-hug. */
     @Inject(method = "tickIdle", at = @At("HEAD"), cancellable = true)
     private void changedSynergy$limitFriendlyHold(CallbackInfo callback) {
+        // Addon's generic pets infer suits from owner grabs between ticks.
+        // Restore explicit arm holds before expiry, physics or assimilation checks.
+        if (grabbedEntity != null && entity.getEntity() instanceof ChangedEntity carrier
+                && (entity.getLevel().isClientSide()
+                        ? FriendlySocialHugState.isActive(carrier.getId(), grabbedEntity.getId())
+                        : LatexSocialMemory.isFriendlyArmHoldActive(carrier, grabbedEntity))) {
+            var hold = (GrabEntityAbilityInstance)(Object)this;
+            hold.suited = hold.grabbedHasControl = false;
+            hold.suitTransition = hold.suitTransitionO = 0;
+        }
         if (entity.getLevel().isClientSide()) return;
         if (!changedSynergy$harmlessArmHold()) {
             changedSynergy$friendlyPassenger = null;
@@ -198,16 +238,15 @@ public abstract class GrabQteSyncMixin extends AbstractAbilityInstance {
     @Inject(method = "handleEscape", at = @At("TAIL"), remap = false)
     private void changedSynergy$syncExpectedEscapeKey(CallbackInfo callback) {
         if (entity.getLevel().isClientSide()
-                || !ChangedSynergyGameRules.enabled(
-                        entity.getLevel(),
-                        ChangedSynergyGameRules.GRAB_QTE_ENHANCEMENTS)
-                || !(grabbedEntity instanceof ServerPlayer player)
+                || !(net.parkabird.changedsynergy.ai.PlayerHugService.escapePlayer((GrabEntityAbilityInstance)(Object)this) instanceof ServerPlayer player)
                 || currentEscapeKey == changedSynergy$lastSentCurrent
-                        && lastEscapeKey == changedSynergy$lastSentPrevious) {
+                        && lastEscapeKey == changedSynergy$lastSentPrevious
+                        && entity.getLevel().getGameTime() < changedSynergy$lastKeySync + 20) {
             return;
         }
         changedSynergy$lastSentCurrent = currentEscapeKey;
         changedSynergy$lastSentPrevious = lastEscapeKey;
+        changedSynergy$lastKeySync = entity.getLevel().getGameTime();
         ChangedSynergyNetwork.CHANNEL.send(
                 PacketDistributor.PLAYER.with(() -> player),
                 new GrabQteSyncPacket(
@@ -215,7 +254,9 @@ public abstract class GrabQteSyncMixin extends AbstractAbilityInstance {
                         player.getId(),
                         ordinal(currentEscapeKey),
                         ordinal(lastEscapeKey),
-                        ticksUnpressed));
+                        ticksUnpressed,
+                        changedSynergy$escapeSeed,
+                        changedSynergy$escapeDraws));
     }
 
     @Inject(method = "stealGrabFrom", at = @At("HEAD"), remap = false)
@@ -223,11 +264,27 @@ public abstract class GrabQteSyncMixin extends AbstractAbilityInstance {
             GrabEntityAbilityInstance previous, CallbackInfo callback) {
         // Changed transfers the keys and queued input, but omits their generator.
         // Copy before releaseEntity clears it on the previous grabber.
-        if (previous != (Object)this) escapeKeyRandom = previous.escapeKeyRandom;
+        if (previous != (Object)this) {
+            escapeKeyRandom = previous.escapeKeyRandom;
+            var state = (net.parkabird.changedsynergy.ai.GrabEscapeState)previous;
+            changedSynergy$escapeSeed = state.changedSynergy$escapeSeed();
+            changedSynergy$escapeDraws = state.changedSynergy$escapeDraws();
+            changedSynergy$escapeTick = Integer.MIN_VALUE;
+            changedSynergy$lastKeySync = Long.MIN_VALUE;
+        }
     }
 
-    @Inject(method = "handleEscape", at = @At("HEAD"), remap = false)
+    @Inject(method = "handleEscape", at = @At("HEAD"), cancellable = true, remap = false)
     private void changedSynergy$repairIncompleteEscapeState(CallbackInfo callback) {
+        if (net.parkabird.changedsynergy.ai.PlayerHugService.escapePlayer((GrabEntityAbilityInstance)(Object)this) != null) {
+            int tick = entity.getEntity().tickCount;
+            if (changedSynergy$escapeTarget == grabbedEntity && changedSynergy$escapeTick == tick) {
+                callback.cancel();
+                return;
+            }
+            changedSynergy$escapeTarget = grabbedEntity;
+            changedSynergy$escapeTick = tick;
+        }
         if (currentEscapeKey != null && escapeKeyRandom == null) {
             // The server reinitializes and announces the native seed; clients
             // wait for it rather than advancing an uninitialized sequence.
@@ -242,6 +299,8 @@ public abstract class GrabQteSyncMixin extends AbstractAbilityInstance {
         if (callback.getReturnValue()) {
             changedSynergy$lastSentCurrent = null;
             changedSynergy$lastSentPrevious = null;
+            changedSynergy$lastKeySync = Long.MIN_VALUE;
+            changedSynergy$escapeTick = Integer.MIN_VALUE;
         }
     }
 
@@ -319,6 +378,10 @@ public abstract class GrabQteSyncMixin extends AbstractAbilityInstance {
             CallbackInfo callback) {
         changedSynergy$lastSentCurrent = null;
         changedSynergy$lastSentPrevious = null;
+        changedSynergy$lastKeySync = Long.MIN_VALUE;
+        changedSynergy$escapeTick = Integer.MIN_VALUE;
+        changedSynergy$escapeTarget = null;
+        changedSynergy$escapeDraws = 0;
         ServerPlayer releasedOwner = changedSynergy$releasedSuitOwner;
         changedSynergy$releasedSuitOwner = null;
         boolean harmless = changedSynergy$harmlessRelease;
@@ -395,6 +458,7 @@ public abstract class GrabQteSyncMixin extends AbstractAbilityInstance {
                 && grabStrength <= 0.0F
                 && grabbedEntity instanceof ServerPlayer player
                 && entity.getEntity() instanceof Mob mob) {
+            if (net.parkabird.changedsynergy.ai.PlayerHugService.active((GrabEntityAbilityInstance)(Object)this)) return;
             if (changedSynergy$harmlessArmHold()) {
                 return;
             }

@@ -1,0 +1,11 @@
+gradle.beforeProject { project ->
+    project.layout.buildDirectory.set(project.file('.codex-tmp/grab-qte-recovery-build'))
+    project.afterEvaluate {
+        project.sourceSets.main.java.srcDir(project.file('tools/tests/grab-qte'))
+        project.sourceSets.main.java.srcDir(project.file('tools/tests/grab-qte-recovery'))
+        def classes = project.file('.codex-tmp/grab-qte-recovery-build/classes/java/main')
+        project.sourceSets.main.java.destinationDirectory.set(classes)
+        project.sourceSets.main.output.classesDirs = project.files(classes)
+        project.tasks.named('compileJava').configure { destinationDirectory.set(classes) }
+    }
+}

@@ -302,13 +302,20 @@ public final class BondedSuitService {
                 && LatexSocialMemory.isFriendlySuitActive(pet, owner);
     }
 
+    /** The player moving a suited body, independent of follow mode or ownership backend. */
+    @Nullable
+    public static net.minecraft.world.entity.player.Player getSuitController(ChangedEntity pet) {
+        var grab = ability(pet);
+        if (grab == null || !grab.suited
+                || !(grab.grabbedEntity instanceof net.minecraft.world.entity.player.Player player)) return null;
+        if (!pet.level().isClientSide && LatexSocialMemory.isFriendlyArmHoldActive(pet, player)) return null;
+        return grab.grabbedHasControl || player instanceof ServerPlayer owner
+                && LatexSocialMemory.isFriendlySuitActive(pet, owner) && !TakeoverService.active(owner) ? player : null;
+    }
+
     /** True for both Synergy-managed suits and Changed's native pet suit. */
     public static boolean isWrappingOwner(ChangedEntity pet, ServerPlayer owner) {
-        GrabEntityAbilityInstance ability = ability(pet);
-        return ability != null
-                && ability.grabbedEntity == owner
-                && ability.suited
-                && ability.grabbedHasControl;
+        return getSuitController(pet) == owner;
     }
 
     /** True for Changed/Addon native pet suits, whether or not Synergy started them. */

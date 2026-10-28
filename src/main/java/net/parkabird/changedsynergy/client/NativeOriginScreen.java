@@ -31,7 +31,7 @@ public final class NativeOriginScreen extends Screen {
     private record Page(int category, int number, Entry detail) {}
     private record FolderPose(double x, double y, double angle, double scale) {
         FolderPose mix(FolderPose other, double amount) {
-            double t = ArchiveGeometry.smooth(amount);
+            double t = UiMotion.transition(amount);
             return new FolderPose(Mth.lerp(t, x, other.x), Mth.lerp(t, y, other.y),
                     Mth.lerp(t, angle, other.angle), Mth.lerp(t, scale, other.scale));
         }
@@ -66,6 +66,7 @@ public final class NativeOriginScreen extends Screen {
     private FolderPose pose = HIDDEN;
     private double open, desktopAlpha, welcomeAlpha = 1, recoil, hoverWeight;
     private double fanLeft, fanRight;
+    private final UiSpring folderHover = new UiSpring(0), leftFanMotion = new UiSpring(0), rightFanMotion = new UiSpring(0);
     private long lastFrame = Util.getMillis();
     private long welcomeBegan = lastFrame;
     private boolean folderHovered, dragging, previewCrouch, confirmation, closeAfterTurn;
@@ -131,10 +132,17 @@ public final class NativeOriginScreen extends Screen {
     }
     private void updateMotion(double delta) {
         recoil = 0;
+        if (UiMotion.reduced() && motion != null) {
+            view = switch (motion) { case INTRO, CLOSE -> View.DESKTOP; case OPEN -> View.FILE; case OUTRO -> View.WELCOME; };
+            motion = null; open = view == View.FILE ? 1 : 0;
+            pose = view == View.FILE ? FOCUS : view == View.DESKTOP ? DESKTOP : HIDDEN;
+            welcomeAlpha = view == View.WELCOME ? 1 : 0; desktopAlpha = view == View.DESKTOP ? 1 : 0;
+        }
         if (motion == null) {
             if (view == View.DESKTOP) {
-                hoverWeight = approach(hoverWeight, folderHovered ? 1 : 0, delta / .16);
-                pose = new FolderPose(DESKTOP.x, DESKTOP.y - 12 * ArchiveGeometry.smooth(hoverWeight), DESKTOP.angle, DESKTOP.scale);
+                folderHover.target(folderHovered && !UiMotion.reduced() ? 1 : 0, System.nanoTime());
+                hoverWeight = folderHover.value(System.nanoTime());
+                pose = new FolderPose(DESKTOP.x, DESKTOP.y - 12 * hoverWeight, DESKTOP.angle, DESKTOP.scale);
             }
             return;
         }
@@ -142,24 +150,24 @@ public final class NativeOriginScreen extends Screen {
         switch (motion) {
             case INTRO -> {
                 pose = HIDDEN.mix(DESKTOP, t / .78); open = 0;
-                welcomeAlpha = 1 - ArchiveGeometry.smooth(t / .5);
-                desktopAlpha = ArchiveGeometry.smooth((t - .22) / .56);
+                welcomeAlpha = 1 - UiMotion.transition(t / .5);
+                desktopAlpha = UiMotion.transition((t - .22) / .56);
                 settle(t, .78); end = .92;
             }
             case OUTRO -> {
                 pose = DESKTOP.mix(HIDDEN, t / .7); open = 0;
-                desktopAlpha = 1 - ArchiveGeometry.smooth(t / (.7 * .65));
-                welcomeAlpha = ArchiveGeometry.smooth((t / .7 - .22) / .78); end = .7;
+                desktopAlpha = 1 - UiMotion.transition(t / (.7 * .65));
+                welcomeAlpha = UiMotion.transition((t / .7 - .22) / .78); end = .7;
             }
             case OPEN -> {
                 pose = DESKTOP.mix(FOCUS, t / TRAVEL); welcomeAlpha = 0;
-                desktopAlpha = 1 - ArchiveGeometry.smooth(t / TRAVEL);
-                settle(t, TRAVEL); open = Mth.clamp((t - TRAVEL - .14) / .76, 0, 1); end = TRAVEL + .90;
+                desktopAlpha = 1 - UiMotion.transition(t / TRAVEL);
+                settle(t, TRAVEL); open = UiMotion.transition((t - TRAVEL - .14) / .76); end = TRAVEL + .90;
             }
             case CLOSE -> {
-                open = 1 - Mth.clamp(t / .66, 0, 1);
+                open = 1 - UiMotion.transition(t / .66);
                 pose = FOCUS.mix(DESKTOP, (t - .66) / TRAVEL); welcomeAlpha = 0;
-                desktopAlpha = ArchiveGeometry.smooth((t - .66) / TRAVEL);
+                desktopAlpha = UiMotion.transition((t - .66) / TRAVEL);
                 settle(t, .66 + TRAVEL); end = .66 + TRAVEL + .14;
             }
             default -> throw new IllegalStateException();
@@ -171,9 +179,6 @@ public final class NativeOriginScreen extends Screen {
             welcomeAlpha = view == View.WELCOME ? 1 : 0; desktopAlpha = view == View.DESKTOP ? 1 : 0;
         }
     }
-    private static double approach(double value, double target, double step) {
-        return value < target ? Math.min(target, value + step) : Math.max(target, value - step);
-    }
     private void resetDoll() { yaw = pitch = 0; zoom = 1; previewCrouch = false; detailScroll = 0; }
     private void changePage(Page next, int direction, double duration) {
         if (locked() || next.equals(paper)) return;
@@ -182,7 +187,9 @@ public final class NativeOriginScreen extends Screen {
         if (state.phase() == 2) state = new NativeOriginStatePacket(0, state.nonce(), state.available(), state.canCancel(), Component.empty(), state.entries());
         focusedRecord = -1;
         closeAfterTurn = false;
-        turn = new Turn(paper, next, direction, duration);
+        if (UiMotion.reduced()) {
+            paper = next; papers.finishTransition(); if (next.detail != null || next.category == 0) resetDoll();
+        } else turn = new Turn(paper, next, direction, duration);
         savedPages[next.category] = next.number;
     }
     private void category(int index) {
@@ -237,22 +244,23 @@ public final class NativeOriginScreen extends Screen {
     }
     private void escape() {
         if (confirmation) { confirmation = false; randomChoice = -1; resetDialogScroll(); ArchiveUiSounds.click(); return; }
-        if (state.canCancel()) { disconnect(); return; }
+        if (state.canCancel()) { exitSelection(); return; }
         switch (view) {
-            case WELCOME -> disconnect();
+            case WELCOME -> exitSelection();
             case DESKTOP -> beginMotion(Motion.OUTRO);
             case FILE -> { if (paper.detail != null) returnToRoster(); else closeFolder(); }
         }
     }
-    private void disconnect() {
+    private void exitSelection() {
         if (state.canCancel()) {
             ChangedSynergyNetwork.CHANNEL.sendToServer(new NativeOriginChoosePacket(state.nonce(), null, false, true));
             state = new NativeOriginStatePacket(1, state.nonce(), state.available(), true, text("cancelling"), state.entries());
             return;
         }
-        if (minecraft.getConnection() != null) minecraft.getConnection().getConnection().disconnect(text("left_selection"));
+        ChangedSynergyNetwork.CHANNEL.sendToServer(new NativeOriginChoosePacket(state.nonce(), null, false, false));
+        state = new NativeOriginStatePacket(1, state.nonce(), state.available(), false, text("choosing_human"), state.entries());
     }
-    private Component exitLabel() { return text(state.canCancel() ? "cancel_selection" : "disconnect"); }
+    private Component exitLabel() { return text(state.canCancel() ? "cancel_selection" : "default_human"); }
 
     @Override public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
         long now = Util.getMillis();
@@ -268,15 +276,22 @@ public final class NativeOriginScreen extends Screen {
         boolean canFan = view == View.FILE && !locked() && !confirmation && paper.category != 0;
         boolean leftFan = canFan && (corner(localMouse, -1) || ArchiveGeometry.stackPageAt(localMouse, paper.number, pageCount(paper.category), paper.detail != null, fanLeft, 0) >= 0);
         boolean rightFan = canFan && (corner(localMouse, 1) || ArchiveGeometry.stackPageAt(localMouse, paper.number, pageCount(paper.category), paper.detail != null, 0, fanRight) >= 0);
-        fanLeft = approach(fanLeft, leftFan ? 1 : 0, delta / .16);
-        fanRight = approach(fanRight, rightFan ? 1 : 0, delta / .16);
+        long fanNow = System.nanoTime();
+        leftFanMotion.target(leftFan ? 1 : 0, fanNow); rightFanMotion.target(rightFan ? 1 : 0, fanNow);
+        if (UiMotion.reduced()) { leftFanMotion.snap(leftFan ? 1 : 0, fanNow); rightFanMotion.snap(rightFan ? 1 : 0, fanNow); }
+        fanLeft = UiSpring.clamp(leftFanMotion.value(fanNow)); fanRight = UiSpring.clamp(rightFanMotion.value(fanNow));
         int hoverPage = canFan ? ArchiveGeometry.stackPageAt(localMouse, paper.number, pageCount(paper.category), paper.detail != null, fanLeft, fanRight) : -1;
         papers.hoverPage(hoverPage);
         if (turn != null && !turn.captured && turn.elapsed() >= .12) {
             Turn active = turn;
             graphics.flush();
             papers.transition(active.from.category, active.to.category);
-            papers.capture(minecraft, snapshot -> content(snapshot, active.direction > 0 ? active.from : active.to, false));
+            Page reverse = active.direction > 0 ? active.to : active.from;
+            papers.capture(minecraft, snapshot -> content(snapshot, active.direction > 0 ? active.from : active.to, false),
+                    hasMothNotes(reverse) ? snapshot -> {
+                        snapshot.pose().pushPose(); snapshot.pose().translate(PAPER_W, 0, 0);
+                        mothNotes(snapshot); snapshot.pose().popPose();
+                    } : null);
             active.captured = true; ArchiveUiSounds.page();
         }
         if (turn != null && turn.elapsed() >= .12 + turn.duration) {
@@ -297,10 +312,15 @@ public final class NativeOriginScreen extends Screen {
             Page source = turn == null ? paper : turn.captured ? turn.to : turn.from;
             // The turning sheet supplies the new left page; it is not already resting there.
             Page left = turn != null && turn.captured && turn.direction > 0 ? turn.from : source;
-            papers.progress(turn == null || !turn.captured ? 0 : ArchiveGeometry.smooth((turn.elapsed() - .12) / turn.duration));
+            papers.progress(turn == null || !turn.captured ? 0 : UiMotion.transition((turn.elapsed() - .12) / turn.duration));
             if (!ArchivePaperRenderer.coverInFront(open)) papers.cover(graphics, open, this::randomSlip);
             papers.shell(graphics, open, source.category, COLORS, source.number, pageCount(source.category), source.detail != null,
                     left.detail != null ? 1 : left.number, turn == null ? fanLeft : 0, turn == null ? fanRight : 0);
+            if (hasMothNotes(left)) {
+                graphics.pose().pushPose();
+                graphics.pose().scale((float)-Math.cos(Math.PI * UiMotion.transition((open - .65) / .35)), 1, 1);
+                mothNotes(graphics); graphics.pose().popPose();
+            }
             // Resting paper stays printed; the moving cover provides the occlusion.
             Page shown = turn != null && turn.captured && turn.direction > 0 ? turn.to : paper;
             content(graphics, shown, turn == null && !locked());
@@ -309,7 +329,7 @@ public final class NativeOriginScreen extends Screen {
                 Page back = turn.direction > 0 ? turn.to : turn.from;
                 int stock = turn.from.category == turn.to.category || back.detail != null || back.number > 0
                         ? 0xFFFDFBF5 : back.category > 0 ? COLORS[back.category - 1] : 0xFFDAC189;
-                papers.curl(graphics, ArchiveGeometry.smooth((turn.elapsed() - .12) / turn.duration),
+                papers.curl(graphics, UiMotion.transition((turn.elapsed() - .12) / turn.duration),
                         turn.direction, turn.from.category, turn.to.category, COLORS, stock);
             }
             if (ArchivePaperRenderer.coverInFront(open)) papers.cover(graphics, open, this::randomSlip);
@@ -332,13 +352,13 @@ public final class NativeOriginScreen extends Screen {
     private static int alpha(int color, double opacity) { return (color & 0xFFFFFF) | ((int)(Mth.clamp(opacity, 0, 1) * 255) << 24); }
     private void welcome(GuiGraphics g, double opacity) {
         double age = (Util.getMillis() - welcomeBegan) / 1000.0;
-        double prompt = ArchiveGeometry.smooth((age - .24) / .45);
+        double prompt = UiMotion.transition((age - .24) / .45);
         g.pose().pushPose();
-        g.pose().translate(0, 18 * (1 - ArchiveGeometry.smooth(age / .45)) - 70 * (1 - opacity), 0);
-        label(g, archive("eyebrow"), 174, 270, 23, alpha(0xFF888888, opacity * ArchiveGeometry.smooth(age / .45)), 1550);
-        label(g, archive("welcome").copy().withStyle(net.minecraft.ChatFormatting.BOLD), 162, 370, 100, alpha(0xFFFFFFFF, opacity * ArchiveGeometry.smooth((age - .06) / .45)), 1470);
-        label(g, archive("subtitle"), 180, 612, 49, alpha(0xFFFFFFFF, opacity * ArchiveGeometry.smooth((age - .12) / .45)), 1500);
-        label(g, archive("intro"), 182, 690, 27, alpha(0xFF949494, opacity * ArchiveGeometry.smooth((age - .18) / .45)), 1500);
+        g.pose().translate(0, 18 * (1 - UiMotion.transition(age / .45)) - 70 * (1 - opacity), 0);
+        label(g, archive("eyebrow"), 174, 270, 23, alpha(0xFF888888, opacity * UiMotion.transition(age / .45)), 1550);
+        label(g, archive("welcome").copy().withStyle(net.minecraft.ChatFormatting.BOLD), 162, 370, 100, alpha(0xFFFFFFFF, opacity * UiMotion.transition((age - .06) / .45)), 1470);
+        label(g, archive("subtitle"), 180, 612, 49, alpha(0xFFFFFFFF, opacity * UiMotion.transition((age - .12) / .45)), 1500);
+        label(g, archive("intro"), 182, 690, 27, alpha(0xFF949494, opacity * UiMotion.transition((age - .18) / .45)), 1500);
         g.fill(182, 784, 182 + (int)(52 * prompt), 786, alpha(0xFFFFFFFF, opacity * prompt));
         label(g, archive("enter"), 182, 806, 24, alpha(0xFFCCCCCC, opacity * prompt), 1400);
         g.pose().popPose();
@@ -354,6 +374,26 @@ public final class NativeOriginScreen extends Screen {
     }
     private void content(GuiGraphics g, Page page, boolean interactive) {
         if (page.category == 0 || page.detail != null) dossier(g, page, interactive); else roster(g, page, interactive);
+    }
+    private static boolean hasMothNotes(Page page) {
+        return page.detail != null && page.detail.form().equals(
+                net.parkabird.changedsynergy.init.ChangedSynergyTransfurVariants.LATEX_SILK_MOTH.getId());
+    }
+    private void mothNotes(GuiGraphics g) {
+        g.pose().pushPose(); g.pose().translate(-658, 268, 0);
+        g.pose().mulPose(Axis.ZP.rotationDegrees(-2));
+        g.fill(5, 7, 555, 449, 0x253D3325);
+        g.fill(0, 0, 550, 442, 0xFFF2EBD5);
+        g.renderOutline(0, 0, 550, 442, 0xFFBFB39A);
+        g.fill(188, -12, 360, 14, 0x99D5C8A6);
+        label(g, archive("silk_moth_notes.title").copy().withStyle(net.minecraft.ChatFormatting.BOLD),
+                29, 40, 24, 0xFF1F2529, 492);
+        g.fill(29, 80, 521, 82, 0xFFCEC1A3);
+        label(g, archive("silk_moth_notes.science"), 29, 108, 26, 0xFF08639C, 492);
+        label(g, archive("silk_moth_notes.technology"), 29, 162, 26, 0xFF2C7572, 492);
+        label(g, archive("silk_moth_notes.humanity"), 29, 216, 26, 0xFF944549, 492);
+        wrapped(g, archive("silk_moth_notes.society"), 29, 282, 26, 0xFF9A7835, 492, 415, 1.35F);
+        g.pose().popPose();
     }
     private void roster(GuiGraphics g, Page page, boolean interactive) {
         var entries = categories.get(page.category);
@@ -608,7 +648,7 @@ public final class NativeOriginScreen extends Screen {
         return super.keyPressed(key, scan, modifiers);
     }
     @Override public boolean mouseClicked(double guiX, double guiY, int button) {
-        if (button == 0 && guiY >= height - 20 && guiX >= width - font.width(exitLabel()) - 20) { disconnect(); return true; }
+        if (button == 0 && guiY >= height - 20 && guiX >= width - font.width(exitLabel()) - 20) { if (!locked()) exitSelection(); return true; }
         if (locked()) return true;
         var p = local(guiX, guiY);
         if (view == View.WELCOME) { if (button == 0) beginMotion(Motion.INTRO); return true; }

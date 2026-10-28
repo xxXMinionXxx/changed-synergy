@@ -25,7 +25,8 @@ public final class BondedInventoryService {
         }
         if (pet.getPersistentData().contains("ChangedSynergyBondedInventory")) return new BondedCreatureInventory(pet);
         if (pet instanceof AbstractDarkLatexEntity dark && dark.getInventory() != null) return dark.getInventory();
-        Container nativeInventory = owner == null ? null : ChangedAddonCompat.prepareBondedInventory(pet, owner);
+        Container nativeInventory = ChangedAddonCompat.bondedInventory(pet);
+        if (nativeInventory == null && owner != null) nativeInventory = ChangedAddonCompat.prepareBondedInventory(pet, owner);
         return nativeInventory == null ? new BondedCreatureInventory(pet) : nativeInventory;
     }
 

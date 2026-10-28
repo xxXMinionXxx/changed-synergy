@@ -75,14 +75,14 @@ public final class SettingsClientRegression {
             ChangedSynergyConfig.COMMON.takeoverBorrow.set(false);
             ChangedSynergyConfig.COMMON.takeoverEscape.set(false);
             var packet = new TakeoverStatePacket(UUID.randomUUID(), TakeoverStatePacket.NORMAL, TakeoverStatePacket.CONTROLLED,
-                    minecraft.player.getId(), minecraft.player.getId(), 100, 100, 0, false, false, false, 0, 0, 0, 0, 20, 0, "Test");
+                    minecraft.player.getId(), minecraft.player.getId(), 100, 100, 0, false, false, false, 0, 0, 0, 0, 20, 0, "Test", false, 0);
             callStatic(TakeoverScreen.class, "actions", new Class<?>[]{TakeoverStatePacket.class}, packet);
             check(((List<?>)callStatic(TakeoverScreen.class, "actions", new Class<?>[]{TakeoverStatePacket.class}, packet)).isEmpty(), "All disabled takeover controls hidden safely");
             ChangedSynergyConfig.COMMON.takeoverEscape.set(true);
             check(((List<?>)callStatic(TakeoverScreen.class, "actions", new Class<?>[]{TakeoverStatePacket.class}, packet)).size() == 1, "Enabled escape control remains");
             ChangedSynergyConfig.COMMON.takeoverBorrow.set(true);
             var exoskeleton = new TakeoverStatePacket(UUID.randomUUID(), TakeoverStatePacket.EXOSKELETON, TakeoverStatePacket.CONTROLLED,
-                    minecraft.player.getId(), minecraft.player.getId(), 100, 100, 0, false, false, true, 0, 0, 0, 0, 20, 0, "Test");
+                    minecraft.player.getId(), minecraft.player.getId(), 100, 100, 0, false, false, true, 0, 0, 0, 0, 20, 0, "Test", false, 0);
             check(((List<?>)callStatic(TakeoverScreen.class, "actions", new Class<?>[]{TakeoverStatePacket.class}, exoskeleton)).isEmpty(),
                     "Exoskeleton takeover cannot offer ordinary borrowing, escape or negotiation");
             var previews = new LinkedHashMap<String, ChangedSynergyConfigScreen>();

@@ -13,7 +13,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.NeutralMob;
-import net.minecraft.world.entity.ai.goal.WrappedGoal;
 import net.minecraft.world.entity.player.Player;
 import net.parkabird.changedsynergy.compat.ChangedAddonCompat;
 
@@ -125,18 +124,6 @@ public final class BondedPetSettings {
     public static boolean hasWorkFavor(ChangedEntity pet) {
         int favor = favor(pet);
         return favor == FAVOR_FISHING || favor == FAVOR_CAVING;
-    }
-
-    public static boolean hasRunningUtilityGoal(ChangedEntity pet) {
-        return pet.goalSelector.getAvailableGoals().stream()
-                .filter(WrappedGoal::isRunning)
-                .map(WrappedGoal::getGoal)
-                .map(PlayerOutpostService::underlyingCompanionTask)
-                .map(goal -> goal.getClass().getSimpleName())
-                .anyMatch(name -> name.contains("FishingGoal")
-                        || name.contains("CaveHarvestGoal")
-                        || name.contains("CaveTorchingGoal")
-                        || name.equals("FallbackBondedWorkGoal"));
     }
 
     public static boolean allowsDefense(

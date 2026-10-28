@@ -1,0 +1,14 @@
+{
+  "replace": false,
+  "values": [
+    "#changed:has_structure/decayed_labs",
+    {
+      "id": "changed:white_latex_forest",
+      "required": false
+    },
+    {
+      "id": "changed:dark_latex_plains",
+      "required": false
+    }
+  ]
+}

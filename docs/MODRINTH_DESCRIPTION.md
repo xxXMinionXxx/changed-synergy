@@ -1,4 +1,6 @@
-![Changed: Synergy](https://media.forgecdn.net/attachments/1899/302/screenshot-png.png)
+![Logo of Changed: Synergy](https://cdn.modrinth.com/data/cached_images/f3503e3267c402d70b9cdae6e2c66381f3f08729.png)
+
+Trailer: https://youtu.be/SbXHfCHbX7Q
 
 # Changed: Synergy
 
@@ -8,7 +10,7 @@ Transfur is not always the end. Sometimes you can negotiate your way back out of
 
 Synergy is an unofficial Forge addon for Changed on Minecraft 1.20.1. Creatures have persistent names, personalities, memories, dialogue and communities. Befriend them, form a companion bond, build a camp or take a working crew on your travels.
 
-**1.1.4 focuses on integration with TrueTransfur 2.0.0.** Begin as a native latex creature, choose a species through an animated archive and keep your identity while switching between PLAYER and INSTINCT control. TrueTransfur remains optional for Synergy's NPC relationships, camps and companion features.
+**1.1.5 includes integration with TrueTransfur 2.x.** Begin as a native latex creature, choose a species through an animated archive and keep your identity while switching between PLAYER and INSTINCT control. TrueTransfur remains optional for Synergy's NPC relationships, camps and companion features.
 
 ## Guides and quick links
 
@@ -19,7 +21,7 @@ Synergy is an unofficial Forge addon for Changed on Minecraft 1.20.1. Creatures 
 - [TrueTransfur and Instinct mode](https://github.com/ParkaBird/changed-synergy/blob/main/docs/TRUETRANSFUR_INSTINCT_COMPAT.md)
 - [Server settings and commands](https://github.com/ParkaBird/changed-synergy/blob/main/docs/SERVER_CONFIGURATION.md)
 - [Full settings reference](https://github.com/ParkaBird/changed-synergy/blob/main/docs/SETTINGS_GUIDE.md)
-- [What's new in 1.1.4](https://github.com/ParkaBird/changed-synergy/blob/main/docs/CHANGELOG-1.1.4.md)
+- [What's new in 1.1.5](https://github.com/ParkaBird/changed-synergy/blob/main/docs/CHANGELOG-1.1.5.md)
 
 The guide directory also links to Chinese social and settings guides. For feedback, discussion and development updates, join the [Changed: Synergy Discord](https://discord.gg/3yscxe2YgN).
 
@@ -34,7 +36,7 @@ The guide directory also links to Chinese social and settings guides. For feedba
 - Eligible native Instinct players can pursue hostile humans and temporarily take over after completing transfur under the server's PvP rules. Release, negotiation and escape remain available where permitted.
 - Server owners control origin selection, allowed starting forms, role speech and Instinct-player takeover. A default-off option permits ordinarily transformed human-origin players to use Instinct without granting native or permanent-body features.
 
-**TrueTransfur 2.0.0 is recommended.** Native origins and direct-player integration remain compatible with 1.0.1; features involving the separate Instinct body require 2.0.0.
+**TrueTransfur 2.x is supported.** Compatibility with TrueTransfur 1.0.1 is no longer maintained or tested.
 
 ## Creatures, friends and bonds
 
@@ -113,8 +115,8 @@ The server and every connecting client must use the same Synergy build and the r
 | Minecraft | 1.20.1 | Yes |
 | Forge | 47.4.x | Yes |
 | Changed | 0.15.7 | Yes |
-| TrueTransfur | 2.0.0; backward compatibility with 1.0.1 | For native origins and TrueTransfur features |
-| Mixin Args | 1.0 or newer | With TrueTransfur 2.0.0 |
+| TrueTransfur | 2.x | For native origins and TrueTransfur features |
+| Mixin Args | 1.0 or newer | With TrueTransfur 2.x |
 | Changed Addon Plus | 2.9.2c | No |
 | Changed Vanilla | 1.0.1 | No |
 | Changed Extras | 1.1.8b | No |
@@ -138,7 +140,7 @@ Optional mods are not bundled. See the [compatibility guide](https://github.com/
 
 1. Install Forge 47.4.x for Minecraft 1.20.1.
 2. Put Changed 0.15.7 and one Synergy JAR in `mods`.
-3. Add TrueTransfur 2.0.0 and Mixin Args for native origins and Instinct gameplay, plus any other optional integrations you want.
+3. Add TrueTransfur 2.x and Mixin Args for native origins and Instinct gameplay, plus any other optional integrations you want.
 4. Install the same Synergy build and relevant dependencies on the server and every client.
 
 Back up important worlds before updating. Do not install multiple Synergy JARs at once. Report reproducible problems through the [GitHub issue tracker](https://github.com/ParkaBird/changed-synergy/issues), with a crash report or `latest.log`, exact versions and reproduction steps. See [known limitations](https://github.com/ParkaBird/changed-synergy/blob/main/KNOWN_ISSUES.md).

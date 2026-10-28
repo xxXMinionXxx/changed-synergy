@@ -80,9 +80,6 @@ public final class HuntAIEvents {
     private static final long REUNION_ABSENCE_TICKS = 3600L;
     private static final String COMPATRIOT_RALLY_UNTIL =
             "ChangedSynergyCompatriotRallyUntil";
-    private static final String BOND_CONFINEMENT_OWNER = "ChangedSynergyBondConfinementOwner";
-    private static final String BOND_CONFINEMENT_UNTIL = "ChangedSynergyBondConfinementUntil";
-    private static final String BOND_CONFINEMENT_COOLDOWN = "ChangedSynergyBondConfinementCooldown";
     private static final TagKey<EntityType<?>> LATEXES = tag("changed", "latexes");
     private static final TagKey<EntityType<?>> ORGANIC_LATEX = tag("changed", "organic_latex");
     private static final TagKey<EntityType<?>> BENIGN_LATEXES = tag("changed", "benign_latexes");
@@ -135,7 +132,7 @@ public final class HuntAIEvents {
             return;
         }
 
-        tickBondConfinement(mob);
+        net.parkabird.changedsynergy.ai.BondedKinIntervention.tick(mob);
 
         if (!isHuntAIEnabled(mob)) {
             if (mob.tickCount % 20 == Math.floorMod(mob.getId(), 20)) {
@@ -259,6 +256,8 @@ public final class HuntAIEvents {
         }
 
         if (net.parkabird.changedsynergy.ai.PlayfulFriendTransfurGoal.isDefense(victim, player)) return;
+        if (net.parkabird.changedsynergy.ai.HumanBoundaryService.isSoftBoundaryHit(
+                victim, player, event.getSource(), event.getAmount())) return;
         if (net.parkabird.changedsynergy.ai.TakeoverConflictMemory.protectsSelfDefense(victim, player)) return;
         List<ChangedEntity> nearbyKin = level.getEntitiesOfClass(
                         ChangedEntity.class,
@@ -374,9 +373,11 @@ public final class HuntAIEvents {
 
     @SubscribeEvent
     public static void onHunterDeath(LivingDeathEvent event) {
+        ServerPlayer player = event.getSource().getEntity() instanceof ServerPlayer direct ? direct
+                : event.getSource().getEntity() instanceof ChangedEntity body ? TrueTransfurCompat.bodyOwner(body) : null;
         if (event.getSource().is(net.ltxprogrammer.changed.init.ChangedDamageSources.GRAB_ESCAPE.key())
                 || !(event.getEntity() instanceof ChangedEntity fallen)
-                || !(event.getSource().getEntity() instanceof ServerPlayer player)
+                || player == null
                 || !(fallen.level() instanceof ServerLevel level)
                 || !LatexSocialMemory.isSocialLatex(fallen)
                 || isOwnedBy(fallen, player)) {
@@ -403,28 +404,16 @@ public final class HuntAIEvents {
         }
 
         for (ChangedEntity bond : nearbyKin) {
-            if (!ChangedSynergyConfig.COMMON.bondedKinConfinement.get()
-                    || !LatexSocialMemory.isBonded(bond, player)
-                    || LatexSocialMemory.isOrganic(bond)
+            if (!net.parkabird.changedsynergy.ai.BondedKinIntervention.canIntervene(bond, player)
                     || HunterFaction.of(fallen) != HunterFaction.of(bond)
                     || !bond.hasLineOfSight(fallen) && !bond.hasLineOfSight(player)) continue;
             int limit = ChangedSynergyConfig.COMMON.bondedKinKillBaseLimit.get()
                     + Math.max(0, CreaturePersonality.familiarity(bond, player) - 40) / 10;
             int kills = CreaturePersonality.recordWitnessedKinKill(bond, player);
             if (kills < limit) {
-                player.sendSystemMessage(Component.translatable(
-                        "message.changed_synergy.bond_kin_kill_warning",
-                        bond.getDisplayName(), kills));
-            } else if (bond.getPersistentData().getLong(BOND_CONFINEMENT_COOLDOWN)
-                    <= level.getGameTime()) {
-                bond.getPersistentData().putUUID(BOND_CONFINEMENT_OWNER, player.getUUID());
-                bond.getPersistentData().putLong(BOND_CONFINEMENT_UNTIL,
-                        level.getGameTime() + 2400L);
-                bond.getPersistentData().putLong(BOND_CONFINEMENT_COOLDOWN,
-                        level.getGameTime() + 24000L);
-                player.sendSystemMessage(Component.translatable(
-                        "message.changed_synergy.bond_kin_kill_limit",
-                        bond.getDisplayName()));
+                NpcDialogue.trigger(bond, player, Cue.BOND_KIN_KILL_WARNING);
+            } else if (net.parkabird.changedsynergy.ai.BondedKinIntervention.request(bond, player)) {
+                NpcDialogue.trigger(bond, player, Cue.BOND_KIN_KILL_LIMIT);
             }
         }
 
@@ -487,36 +476,6 @@ public final class HuntAIEvents {
         }
         NpcDialogue.trigger(witnesses.get(0), player, Cue.ALLY_FALLEN);
         witnesses.stream().skip(1).forEach(ally -> NpcDialogue.emoteOnly(ally, Cue.ALLY_FALLEN));
-    }
-
-    private static void tickBondConfinement(ChangedEntity bond) {
-        if (bond.tickCount % 5 != 0
-                || !bond.getPersistentData().hasUUID(BOND_CONFINEMENT_OWNER)
-                || !(bond.level() instanceof ServerLevel level)) return;
-        if (!ChangedSynergyConfig.COMMON.bondedKinConfinement.get()) {
-            bond.getPersistentData().remove(BOND_CONFINEMENT_OWNER);
-            bond.getPersistentData().remove(BOND_CONFINEMENT_UNTIL);
-            return;
-        }
-        long until = bond.getPersistentData().getLong(BOND_CONFINEMENT_UNTIL);
-        UUID ownerId = bond.getPersistentData().getUUID(BOND_CONFINEMENT_OWNER);
-        ServerPlayer owner = level.getServer().getPlayerList().getPlayer(ownerId);
-        if (until <= level.getGameTime() || owner == null || owner.level() != level
-                || !LatexSocialMemory.isBonded(bond, owner) || !bond.isAlive()
-                || !owner.isAlive() || owner.isCreative() || owner.isSpectator()) {
-            bond.getPersistentData().remove(BOND_CONFINEMENT_OWNER);
-            bond.getPersistentData().remove(BOND_CONFINEMENT_UNTIL);
-            return;
-        }
-        if (TakeoverService.active(owner) || TrueTransfurCompat.isInstinctShell(owner)
-                || TrueTransfurCompat.isRebirthing(owner)) return;
-        if (TakeoverService.beginBondedConfinement(bond, owner)) {
-            bond.getPersistentData().remove(BOND_CONFINEMENT_OWNER);
-            bond.getPersistentData().remove(BOND_CONFINEMENT_UNTIL);
-        } else {
-            // Nearby does not mean reachable: approach through the actual doorway or stairs.
-            bond.getNavigation().moveTo(owner, 1.0D);
-        }
     }
 
     @SubscribeEvent

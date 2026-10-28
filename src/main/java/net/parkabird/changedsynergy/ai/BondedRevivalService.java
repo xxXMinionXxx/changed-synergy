@@ -29,7 +29,7 @@ import net.parkabird.changedsynergy.advancement.SynergyAdvancements;
 import net.parkabird.changedsynergy.compat.TrueTransfurCompat;
 import net.parkabird.changedsynergy.init.ChangedSynergyItems;
 
-/** Death-to-mask-to-body reconstruction for bonded dark latex creatures. */
+/** Saved bonded identities for material-based revival and the operator recall command. */
 public final class BondedRevivalService {
     public static final String REVIVAL_ENTITY_TOKEN = "ChangedSynergyRevivalToken";
     private static final String MASK_ROOT = "ChangedSynergyBondRevival";
@@ -50,10 +50,7 @@ public final class BondedRevivalService {
     /** Captures identity before ordinary death cleanup removes bonds and cargo. */
     public static boolean dropBrokenMask(ChangedEntity creature) {
         if (!(creature.level() instanceof ServerLevel level)
-                || isProvisional(creature)
-                || creature.getType() == ChangedEntities.DARK_LATEX_WOLF_PARTIAL.get()
-                || LatexSocialMemory.isOrganic(creature)
-                || creature.getSelfVariant() == null) {
+                || isProvisional(creature)) {
             return false;
         }
         Set<UUID> bonds = new LinkedHashSet<>(
@@ -70,7 +67,9 @@ public final class BondedRevivalService {
                 .filter(bonds::contains)
                 .orElseGet(() -> bonds.iterator().next());
         String name = creature.getDisplayName().getString();
-        String form = creature.getSelfVariant().getFormId().toString();
+        boolean itemRevival = creature.getType() != ChangedEntities.DARK_LATEX_WOLF_PARTIAL.get()
+                && !LatexSocialMemory.isOrganic(creature) && creature.getSelfVariant() != null;
+        String form = creature.getSelfVariant() == null ? "" : creature.getSelfVariant().getFormId().toString();
         boolean darkMask = HunterFaction.of(creature) == HunterFaction.DARK;
 
         // Restore any real held meal/equipment before death drops and identity capture.
@@ -80,7 +79,7 @@ public final class BondedRevivalService {
         sanitizeSnapshot(snapshot);
 
         CompoundTag record = new CompoundTag();
-        record.putString("State", STATE_BROKEN);
+        record.putString("State", itemRevival ? STATE_BROKEN : "archived");
         record.putUUID("Owner", owner);
         record.putUUID("OldEntity", creature.getUUID());
         record.putString("BondName", name);
@@ -91,6 +90,9 @@ public final class BondedRevivalService {
         bonds.forEach(uuid -> storedBonds.add(StringTag.valueOf(uuid.toString())));
         record.put("Bonds", storedBonds);
         UUID token = data.create(record);
+
+        // Command-only records do not add revival drops to organic or unsupported bodies.
+        if (!itemRevival) return false;
 
         ItemStack mask = darkMask
                 ? brokenMask(token, owner, name, form)
@@ -405,6 +407,72 @@ public final class BondedRevivalService {
                 || !revived.getUUID().equals(record.getUUID("NewEntity"))) {
             return;
         }
+        finishReconstruction(revived, owner, token, record);
+        CreaturePersonality.setFamiliarity(
+                revived,
+                owner,
+                Math.max(36, CreaturePersonality.familiarity(revived, owner) + 20));
+        owner.sendSystemMessage(Component.translatable(
+                "message.changed_synergy.revival.complete",
+                record.getString("BondName")));
+        SynergyAdvancements.grant(owner, SynergyAdvancements.BONDED_REVIVAL);
+    }
+
+    /** Admin recall bypasses the item/wrapping ritual, but consumes the same identity record. */
+    @Nullable
+    public static ChangedEntity reviveImmediately(ServerPlayer owner, UUID oldEntity) {
+        if (!owner.isAlive() || owner.isSpectator()) return null;
+        var data = BondedRevivalData.get(owner.server);
+        for (var entry : data.availableTo(owner.getUUID()).entrySet()) {
+            var record = entry.getValue();
+            if (!record.hasUUID("OldEntity") || !oldEntity.equals(record.getUUID("OldEntity"))) continue;
+            Entity original = findEntity(owner, oldEntity);
+            if (original != null && original.isAlive()) return null;
+            UUID token = entry.getKey();
+            String prior = record.getString("State");
+            if (!data.transition(token, prior, STATE_REBUILDING)) return null;
+            ChangedEntity revived = null;
+            try {
+                CompoundTag snapshot = record.getCompound("Snapshot").copy();
+                sanitizeSnapshot(snapshot);
+                snapshot.putUUID("UUID", UUID.randomUUID());
+                Entity created = EntityType.create(snapshot, owner.serverLevel()).orElse(null);
+                if (!(created instanceof ChangedEntity changed)) {
+                    data.setState(token, prior);
+                    return null;
+                }
+                revived = changed;
+                revived.moveTo(owner.getX(), owner.getY(), owner.getZ(), owner.getYRot(), 0);
+                revived.setHealth(revived.getMaxHealth());
+                revived.removeAllEffects();
+                revived.setSecondsOnFire(0);
+                revived.setDeltaMovement(Vec3.ZERO);
+                revived.setTarget(null);
+                revived.setInvulnerable(false);
+                revived.setPersistenceRequired();
+                for (UUID playerId : storedBonds(record)) {
+                    ServerPlayer player = owner.server.getPlayerList().getPlayer(playerId);
+                    if (player != null) LatexSocialMemory.endFriendlySuit(revived, player);
+                }
+                if (!owner.serverLevel().addFreshEntity(revived)) {
+                    data.setState(token, prior);
+                    return null;
+                }
+                data.putUuid(token, "NewEntity", revived.getUUID());
+                finishReconstruction(revived, owner, token, record);
+                return revived;
+            } catch (RuntimeException failure) {
+                if (revived != null) revived.discard();
+                data.setState(token, prior);
+                ChangedSynergyMod.LOGGER.warn("Could not recall bonded creature {}", oldEntity, failure);
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private static void finishReconstruction(ChangedEntity revived, ServerPlayer owner, UUID token, CompoundTag record) {
+        BondedRevivalData data = BondedRevivalData.get(owner.server);
         data.setState(token, STATE_COMPLETE);
         revived.getPersistentData().remove(REVIVAL_ENTITY_TOKEN);
         revived.setInvulnerable(false);
@@ -423,14 +491,6 @@ public final class BondedRevivalService {
         CreatureLifeMemory.ensure(revived);
         CreatureCommunityData.bind(revived);
         BondedCreatureLifecycle.track(revived);
-        CreaturePersonality.setFamiliarity(
-                revived,
-                owner,
-                Math.max(36, CreaturePersonality.familiarity(revived, owner) + 20));
-        owner.sendSystemMessage(Component.translatable(
-                "message.changed_synergy.revival.complete",
-                record.getString("BondName")));
-        SynergyAdvancements.grant(owner, SynergyAdvancements.BONDED_REVIVAL);
     }
 
     public static void applyCompletedReferences(ServerPlayer player) {
@@ -623,7 +683,7 @@ public final class BondedRevivalService {
                     "ChangedSynergyPlayerOutpostWorkOutput", "ChangedSynergyPlayerOutpostFarmBatch", "ChangedSynergyPlayerOutpostHaulBatch", "ChangedSynergyPlayerOutpostOwner",
                     "ChangedSynergyPlayerOutpostResting", "ChangedSynergyOutpostMealSeat", "ChangedSynergyOutpostMealPlace",
                     "ChangedSynergyCampMealFood", "ChangedSynergyCampMealOffhand",
-                    "ChangedSynergyCampMealUsing", "ChangedSynergyCampMealFinished"}) {
+                    "ChangedSynergyCampMealUsing", "ChangedSynergyCampMealFinished", "ChangedSynergyCompanionMeal"}) {
                 snapshot.getCompound("ForgeData").remove(key);
             }
         }

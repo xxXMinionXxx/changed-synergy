@@ -6,6 +6,8 @@ This guide covers player camps in **Changed: Synergy 1.1.4**. All camp commands 
 
 1. Place a campfire, look at it and run `/changedsynergy outpost create`. Linked facilities stay within 32 blocks of the centre; marked work areas can extend up to 64 blocks from it. Camps established with bells in earlier versions remain valid.
 2. Place a chest or another supported storage container, look at it and run `/changedsynergy outpost link`. Workers use the storage explicitly linked to your camp.
+
+   Sophisticated Storage containers can be linked in the same way. Workers respect their automation filters and stack upgrades when delivering cargo or fetching food, seeds and composting supplies. Full containers leave undelivered cargo on the creature. Chest-shaped mod containers use their own storage interface when they do not have a vanilla chest block entity. Neither half of a wild-community double chest can be linked as player storage.
 3. Look at each bed and run `/changedsynergy outpost link` to add it. Use the same command on pillows, office chairs and tall cardboard boxes to add separate rest points, or on a campfire or composter to bind that facility.
 4. Bring an eligible adult creature at Close friendship into camp, look at them and run `/changedsynergy outpost invite`. You can also use `invite <entity selector>`.
 5. Look at a recruited member and use `work gather|hunt|farm|cook|haul` to assign supply work. For example, `/changedsynergy outpost work farm` assigns farming, including composting when no crop task is available.
@@ -17,7 +19,7 @@ The relationship wheel provides the same shortcuts. If you have no camp, look at
 
 When you aim at an eligible adult creature inside your camp, the relationship wheel's management option changes to **Invite to Camp**. Close friendship is required. Creatures already assigned to a camp, player-controlled bodies and creatures with another owner cannot be recruited. The invitation must meet the same conditions as the command.
 
-Wild creature outposts are separate from player camps. A server can disable new wild construction with `COMMUNITIES.CreatureOutposts` while leaving player camps and existing wild storage intact. Opening a container at any wild creature outpost awards **Mysterious Foraging Spot**; merely attempting to open a guarded container does not count.
+Wild creature outposts are separate from player camps. A server can disable new wild construction with `COMMUNITIES.CreatureOutposts` while leaving player camps and existing wild storage intact. Wild storage can be opened at every reputation level. Witnesses still react according to reputation: allies allow access, respected visitors receive warnings before repeated use provokes guards, and other visitors risk reputation loss and guard retaliation. Unattended storage does not require a trade. Opening a container at any wild creature outpost awards **Mysterious Foraging Spot**; merely attempting to open it does not count.
 
 ## Command Reference
 
@@ -215,7 +217,7 @@ Camps require both `COMMUNITIES.PlayerOutposts` and the world rule `changedSyner
 
 Work respects `mobGriefing` and supported block-modification cancellation events. Compatibility with every third-party claim plugin is not guaranteed.
 
-Production and shared meals pause while the owner is offline by default. Enabling offline work still limits it to loaded chunks: workers do not force chunks to load or simulate work during unloaded time. The default search interval is 100 ticks (five seconds at 20 TPS), with at most four active stationary suppliers and four active travelling gatherers per camp. Searches are staggered between workers. Increasing `COMMUNITIES.PlayerOutpostWorkScanInterval` or reducing `COMMUNITIES.PlayerOutpostActiveWorkers` reduces background AI and pathfinding load, while delaying task discovery or reducing simultaneous work in each group.
+Production and shared meals pause while the owner is offline by default. Enabling offline work still limits it to loaded chunks: workers do not force chunks to load or simulate work during unloaded time. The default search interval is 100 ticks (five seconds at 20 TPS), with at most four active stationary suppliers and four active travelling gatherers per camp. Searches are staggered between workers. Work routes reuse active paths and back off after failures. Unloaded destinations do not force chunks to load; blocked wild deliveries release movement while retaining their cargo. Camp membership still excludes wild-community work when camp features are paused. Increasing `COMMUNITIES.PlayerOutpostWorkScanInterval` or reducing `COMMUNITIES.PlayerOutpostActiveWorkers` reduces background AI and pathfinding load, while delaying task discovery or reducing simultaneous work in each group.
 
 Server operators can use `/changedsynergy config list COMMUNITIES`, followed by the `get`, `set` and `reset` subcommands, to manage camp settings. Configuration keys support command completion. Client settings cannot override the server's work switches. See [Server, world and client settings](SERVER_CONFIGURATION.md) for the configuration file, command syntax and synchronized settings page.
 

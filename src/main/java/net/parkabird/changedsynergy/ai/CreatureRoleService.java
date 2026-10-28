@@ -52,7 +52,7 @@ public final class CreatureRoleService {
             case SCOUT -> tickScout(creature, level);
             case GUARD -> tickGuard(creature, level);
             case PROVISIONER -> tickProvisioner(creature, level);
-            case YOUNGSTER -> { }
+            case YOUNGSTER, WANDERER -> { }
         }
     }
 

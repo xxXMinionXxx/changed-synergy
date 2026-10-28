@@ -1,5 +1,17 @@
 # Social guide
 
+## Playing together in 1.1.5
+
+**Play together** retains its existing hypnosis-practice and random friendly-hug outcomes. Its ordinary response can instead invite you to a chase on land or in water with an aquatic friend: crouch to be the chaser or jump to be the runner within ten seconds. Your friend confirms the opposite role. The runner starts immediately. Both participants see a three-second countdown until the chaser starts, giving the runner three seconds of head start. The countdown is followed by a distance bar: closer participants fill the bar, and the remaining chase time is shown separately. The chase lasts fifteen seconds by default. Player chasers must wait for their own GO: moving toward the runner early or trying to tag them voids the round. Quickly press crouch three times to leave. The role-selection crouch is not part of the exit sequence. Both hold and toggle crouch work normally.
+
+For a player chaser, approaching the runner is not enough: get close and right-click them to confirm the catch. NPC chasers catch by reaching their playmate. A suitable creature can finish with a harmless two-second hug and the normal grab sound. Human players do not pick up NPCs. If nobody is caught, the chaser looks embarrassed and the runner can offer a pat. When you are the successful runner, comforting your friend is voluntary. Games do not cause transfur, damage or escape stun, and do not award extra affection repeatedly during one interaction.
+
+Idle NPCs can also pat each other and play with nearby non-hostile creatures, with personalities affecting how often they volunteer. Recent playmates are preferred and future games tend to exchange roles. Work, combat, rescue and owner commands take priority; following companions only play while their owner stays nearby. Unsuitable bodies use touch and other short feedback instead of an unsafe grab. Aquatic creatures are never forced onto land.
+
+Aquatic friends can play in the water with players or other aquatic creatures. Both participants must stay in the water; destinations and pursuit use swimming navigation at different depths. The jump key chooses the runner role while swimming upward. Leaving the water or needing air ends the game safely, and aquatic creatures are never directed onto land. The existing chase settings control both land and water games.
+
+Server settings under **RELATIONSHIPS**: `AmbientPeerInteractions`, `ChasePlayGames`, `ChasePlayShortHugs`, `ChasePlayDurationSeconds` (15), and `ChasePlayCooldownSeconds` (180 minimum, for automatic NPC games). Automatic short interactions are at least 45 seconds apart. Player-requested play retains its existing relationship cooldown. Disabling chase games restores the ordinary short play response and leaves hypnosis practice and other hugs available.
+
 Successful transfur negotiation establishes an initial acquaintance: after restoration, you can right-click the creature with an empty hand to open its social wheel. This does not grant close friendship or a bond.
 
 [中文版](SOCIAL_GUIDE.zh-CN.md)
@@ -8,7 +20,7 @@ These rules describe the default settings in Changed: Synergy 1.1.4. Servers can
 
 Spectator mode keeps Changed's ability wheel available but does not open Synergy's relationship wheel. Escape closes the wheel, including during an interrupted switch.
 
-TrueTransfur **2.0.0** supports native roleplay and interactions with a player's visible Instinct body. **1.0.1** remains supported for its direct-player integration; features involving the separate Instinct body require 2.0.0. See the [TrueTransfur guide](TRUETRANSFUR_INSTINCT_COMPAT.md) for installation and control modes.
+TrueTransfur **2.x** supports native roleplay and interactions with a player's visible Instinct body. Starting with Synergy 1.1.5, TrueTransfur **1.0.1** compatibility is no longer maintained or tested. See the [TrueTransfur guide](TRUETRANSFUR_INSTINCT_COMPAT.md) for installation and control modes.
 
 ## First contact
 
@@ -21,6 +33,8 @@ Their factions and communities remain separate. The usual [rival-alliance reputa
 Once a stranger is calm enough to interact, use its social wheel for **Talk**, **Pat** or **Gift**. Suitable food held in your main hand can be fed directly by right-clicking. Sneak-right-click with food to open the wheel instead.
 
 Without telepathy, many reactions are species-based sounds. Ordinary conversation and repeated encounters still matter to dialogue and memories, but do not award affection.
+
+Partial Dark Latex Wolves, Partial Snow Leopards and Latex Humans can speak directly, without a Translator or unlocked telepathy. This also applies to their native-player role speech. Hypno Cats provide temporary understanding only to the player they are currently hypnotizing, including friendly practice and its result dialogue. Outside that interaction, the usual telepathy and Translator rules apply; nearby bystanders do not gain temporary understanding.
 
 ## Become acquainted
 
@@ -105,7 +119,9 @@ Once accepted, the token reserves that NPC for you. It remains reserved while yo
 - **Human players:** select and confirm **Voluntary transfur** to establish the bond.
 - **Adult native players and supported permanently transformed TrueTransfur players:** select and confirm **Invite to Bond**. Neither participant changes bodies, and your control mode stays the same.
 
-If you already have a bond or another ownership or bond-count limit prevents a new one, eligible full-affection friends may offer **Friendly transfur** instead. That option creates no new bond and requires no token.
+Any established acquaintance with an intact relationship can offer **Voluntary transfur** to a human player. Confirm it by choosing the option again within ten seconds. This ordinary option requires no bond token and creates no bond. The first successful voluntary transfur with that creature grants a substantial affection bonus; reversing and repeating it does not refill the reward. When the existing Close-friendship and token requirements for a new bond are met, the bond-forming option remains available instead.
+
+With Changed Vanilla installed, a creature with at least one trusted **Familiar** relationship no longer assimilates animals. This includes supported creatures outside Changed Vanilla, and the relationship continues to count while the friend is offline. Servers can disable this through **Changed Vanilla Relationship Animal Protection**; ordinary camp hunting orders remain available.
 
 ## Withdraw, part or reunite
 
@@ -143,17 +159,21 @@ A bonded companion may confine an owner after repeated **witnessed** kills of it
 
 Takeover consequences depend on the encounter:
 
-Takeovers require Changed's **Keep Conscious** rule (`changed:keepConscious`).
-With this rule off, forced transfur causes death through the normal conversion
+Ordinary takeovers require Changed's **Keep Conscious** rule (`changed:keepConscious`).
+With this rule off, ordinary forced transfur causes death through the normal conversion
 instead, including attacks from Instinct-mode players. Confirmed voluntary
 friendship/bond transfur and chosen starting origins remain safe; protective
-wrapping does not count as forced transfur. The resulting NPC is not automatically named after the player.
+wrapping does not count as forced transfur. Addon Plus's latex totem also protects consciousness when carried in the main inventory or off hand. This passive protection follows the totem's normal behaviour and does not consume it. The resulting NPC from an unprotected death is not automatically named after the player.
 
 | Encounter | Outcome |
 | --- | --- |
 | Bonded kin confinement, a personality-led friendly takeover, or confinement following aggression at neutral/friendly standing | The countdown releases you. A failed escape can make you sleep before release; friendly takeover can include orange compensation. |
 | Aggression at **Distrusted** standing | A direct takeover can permanently transform you into the carrier. |
 | Aggression at **Hostile** standing | Punitive takeover can end in unconscious death. |
+
+If you carry an Addon Plus latex totem when a fatal punitive takeover reaches its final outcome, it protects your consciousness and lets you keep the carrier's body. The original carrier is absorbed into that outcome rather than duplicated. This exception does not turn ordinary confinement into a body claim.
+
+Fatal punitive takeover at **Hostile** standing remains available even with Keep Conscious disabled, provided punitive takeover and its final outcomes are enabled on the server. Without a totem its fatal outcome still kills the host; with a totem it can reverse into a body claim. Friendly confinement, environmental exposure and ordinary transformations do not gain this exception.
 
 Release negotiation is available once per takeover. Failure extends ordinary confinement; in a fatal punitive takeover it shortens the deadline. An interrupted grab is cleared when another creature takes over. If the carrier disappears, the session releases its movement lock instead of leaving you trapped. Server takeover and final-outcome settings can change these rules.
 
@@ -217,7 +237,7 @@ Temporary companion wrapping does not make you permanently transformed. When Tru
 
 With player hypnosis enabled, a player in a suitable hypnotic species can contest a human player's resistance. Both players see the same style of WASD QTE and share its progress: the creature reinforces it while the human tries to escape. Player contests last longer than NPC hypnosis. Patting the player hypnotist briefly prevents them from reinforcing the QTE.
 
-Server owners can disable **Enable Telepathy** under Dialogue. This pauses new unlock progress and replaces telepathic speech with species vocalizations, including for players who already unlocked telepathy, transformed players, hypnosis and takeover. Saved progress returns when the setting is enabled again. A supported, enabled Addon Translator can still translate when its separate support option is enabled. This does not disable hypnosis or takeover gameplay.
+Server owners can disable **Enable Telepathy** under Dialogue. This pauses new unlock progress and replaces telepathic speech with species vocalizations, including for players who already unlocked telepathy, transformed players, hypnosis and takeover. Saved progress returns when the setting is enabled again. Directly spoken language remains understandable. A supported, enabled Addon Translator can still translate when its separate support option is enabled. This does not disable hypnosis or takeover gameplay.
 
 The negotiation panel describes the current transfur encounter. The creature's first-contact thought describes your original meeting and can differ after a later conflict. A successful negotiation ends that individual conflict without erasing faction history.
 
@@ -234,3 +254,19 @@ The existing acquaintance, Familiar friendship, Close friendship and first-bond 
 Rejected gifts and ordinary attacks do not award these milestones.
 
 For configuration details, token-list syntax and administrator commands, see [Friends, gifts and bonds](RELATIONSHIP_GROWTH.md). `/changedsynergy relationship help` lists the available debug commands. For camp jobs and management, see the [Player camp guide](PLAYER_CAMP_GUIDE.md).
+
+## Operator recall of a deceased bond
+
+Use `/changedsynergy bond revive` to restore your only available deceased bond beside you. If several are recorded, it lists them; `/changedsynergy bond revive list` always shows the list. Click an entry or use Tab to complete `/changedsynergy bond revive <creature UUID>`. Operators and the console can append an online player name to restore that player's bond. Permission level 2 is required.
+
+Recall preserves the saved species, name, personality and relationship, consumes the existing death record, and skips the mask/sample ritual. Equipment and camp supplies already dropped on death are not recreated. Organic bonds also receive command-only records from this version onward; older deaths without saved creature data cannot be reconstructed.
+
+## Food for injured companions
+
+Bonded creatures and established, non-hostile friends can eat food stored in their own inventory when health is at or below 60%; in combat the threshold is 35%. They consume one real item with its normal use duration and effects. Recovery is `nutrition × (0.5 + saturation modifier)` health points, capped by maximum health. Bowls and bottles return to their inventory. A meal has a three-second cooldown. Critically injured bonds still prioritize wrapping their player to recover, interrupting a meal and returning uneaten food when necessary. Emergency owner rescue also takes priority. Harmful foods and unpredictable suspicious stew/chorus fruit are skipped, and food selection weighs useful recovery against wasted healing. Ordinary food is preferred; golden apples require health at or below 35%, enchanted ones 20%, with their selection weight rising as health falls. The server setting `RELATIONSHIPS.CompanionAutoEat` defaults to `true`. TrueTransfur-controlled bodies retain TrueTransfur's own eating system.
+
+## Player friendly hugs
+
+Right-click the existing Grab option in the ability wheel to toggle Friendly hug. Select and activate it as usual; holding the ability key again releases the target. Humans, humanoid monsters, latex creatures and transformed players can be held. Left and right mouse buttons cannot damage, transfur, absorb or wrap the held target. Captured players retain the native escape QTE. Escape gives two seconds to step away before another friendly hug, without a combat ceasefire. Unknown and hostile creatures retain their resistance and hostility; this interaction grants no affection.
+
+Pups use either a chest carry or support under their forelegs, chosen once per hold. Small feral snow leopards use the upright carry, Milk Puddings are supported from below, Feral Sharks are held upright with their side facing outward, and Headless Knights are carried upright with support under the forelegs and their hindquarters hanging down. Feral Sharks cannot initiate grabbing. Other forms require their existing grab ability. External attacks interrupt a friendly hug. Server settings: `RELATIONSHIPS.PlayerFriendlyHugs` and `RELATIONSHIPS.PlayerFriendlyHugPlayers`; both default to `true`, and player targets also respect Changed’s player-grab permission.

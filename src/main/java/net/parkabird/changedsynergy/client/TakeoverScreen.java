@@ -10,6 +10,7 @@ import net.ltxprogrammer.changed.util.Color3;
 import net.ltxprogrammer.changed.util.SingleRunnable;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
@@ -27,6 +28,7 @@ public final class TakeoverScreen extends AbstractRadialScreen<TakeoverScreen.Ta
     private static final Action ESCAPE = icon(TakeoverActionPacket.START_STRUGGLE, "deny");
     private static final Action NEGOTIATE = icon(TakeoverActionPacket.NEGOTIATE, "idea");
     private static final Action RETURN = icon(TakeoverActionPacket.RETURN_CONTROL, "pause");
+    private static final Action SURRENDER = icon(TakeoverActionPacket.SURRENDER, "sleepy");
     private final UUID session;
     private List<Action> actions;
     private boolean escapeConfirmationPending;
@@ -54,6 +56,7 @@ public final class TakeoverScreen extends AbstractRadialScreen<TakeoverScreen.Ta
                     && ServerConfigClient.value(net.parkabird.changedsynergy.ChangedSynergyConfig.COMMON.takeoverEscape)) result.add(ESCAPE);
         }
         if ((state.kind() == TakeoverStatePacket.NORMAL || state.kind() == TakeoverStatePacket.INSTINCT) && state.negotiationEnabled()) result.add(NEGOTIATE);
+        if (state.kind() == TakeoverStatePacket.NORMAL && state.surrenderAllowed()) result.add(SURRENDER);
         return List.copyOf(result);
     }
 
@@ -128,6 +131,8 @@ public final class TakeoverScreen extends AbstractRadialScreen<TakeoverScreen.Ta
                     TakeoverClientState.text(TakeoverClientState.current().negotiationUsed()
                             ? "negotiation_used" : "negotiation_hint"));
         }
+        if (action == TakeoverActionPacket.SURRENDER)
+            return List.of(TakeoverClientState.text("surrender"), TakeoverClientState.text("surrender_hint"));
         return List.of(TakeoverClientState.text("return"));
     }
 
@@ -137,8 +142,8 @@ public final class TakeoverScreen extends AbstractRadialScreen<TakeoverScreen.Ta
         boolean selected = getSectionAt(mouseX, mouseY).filter(i -> i == section).isPresent();
         ResourceLocation texture = Changed.modResource("textures/gui/radial/goo"
                 + (selected ? "_selected/" : "/") + section + ".png");
-        graphics.setColor(red, green, blue, 1.0F);
-        graphics.blit(texture, (int)x - 32 + leftPos, (int)y - 32 + topPos,
+        graphics.setColor(red, green, blue, RadialWheelAnimations.layerAlpha(this));
+        RadialWheelAnimations.drawFrame(this, graphics, texture, (int)x - 32 + leftPos, (int)y - 32 + topPos,
                 0.0F, 0.0F, 64, 64, 64, 64);
         graphics.setColor(1, 1, 1, 1);
     }
@@ -160,6 +165,11 @@ public final class TakeoverScreen extends AbstractRadialScreen<TakeoverScreen.Ta
     public boolean handleClicked(int section, SingleRunnable close) {
         if (!valid() || section < 0 || section >= actions.size()) return false;
         int action = actions.get(section).id();
+        if (action == TakeoverActionPacket.SURRENDER) {
+            if (!TakeoverClientState.request(TakeoverActionPacket.CONFIRM_SURRENDER, session)) return false;
+            Minecraft.getInstance().setScreen(new SurrenderConfirmation(this));
+            return false;
+        }
         if (action == TakeoverActionPacket.NEGOTIATE
                 && TakeoverClientState.current().negotiationUsed()) return false;
         if (action == TakeoverActionPacket.START_STRUGGLE
@@ -182,6 +192,36 @@ public final class TakeoverScreen extends AbstractRadialScreen<TakeoverScreen.Ta
     }
 
     private record Action(int id, ResourceLocation texture) {}
+
+    private static final class SurrenderConfirmation extends ConfirmScreen {
+        private final TakeoverScreen parent;
+        private int elapsed;
+
+        SurrenderConfirmation(TakeoverScreen parent) {
+            super(confirmed -> {
+                boolean valid = parent.valid() && TakeoverClientState.current().surrenderAllowed();
+                if (confirmed && valid) TakeoverClientState.request(TakeoverActionPacket.SURRENDER, parent.session);
+                else TakeoverClientState.request(TakeoverActionPacket.CANCEL_SURRENDER, parent.session);
+                Minecraft.getInstance().setScreen(!confirmed && valid ? parent : null);
+            }, TakeoverClientState.text("surrender_confirm_title"), TakeoverClientState.text("surrender_confirm_warning"),
+                    TakeoverClientState.text("surrender_confirm"), Component.translatable("gui.cancel"));
+            this.parent = parent;
+        }
+
+        @Override protected void init() {
+            super.init();
+            setDelay(10);
+        }
+
+        @Override public void tick() {
+            super.tick();
+            if (!parent.valid() || !TakeoverClientState.current().surrenderAllowed()
+                    || ++elapsed >= net.parkabird.changedsynergy.ai.TakeoverSession.SURRENDER_CONFIRM_TICKS) onClose();
+        }
+
+        @Override public boolean isPauseScreen() { return false; }
+        @Override public boolean shouldCloseOnEsc() { return true; }
+    }
 
     public static final class TakeoverMenu extends AbstractContainerMenu {
         private TakeoverMenu() { super(null, 0); }

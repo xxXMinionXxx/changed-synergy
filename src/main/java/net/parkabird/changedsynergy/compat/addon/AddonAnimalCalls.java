@@ -16,6 +16,7 @@ public final class AddonAnimalCalls {
     private AddonAnimalCalls() {}
 
     public static void play(ChangedEntity creature, String mood) {
+        if (net.parkabird.changedsynergy.ai.BondedSuitService.getSuitController(creature) != null) return;
         long now = creature.level().getGameTime();
         if (creature.getPersistentData().getLong(NEXT_CALL) > now
                 || creature.getRandom().nextFloat() > 0.4F) return;

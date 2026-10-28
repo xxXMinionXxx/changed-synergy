@@ -31,6 +31,28 @@ public final class ChangedSynergyMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public void postApply(String target, ClassNode node, String mixin, IMixinInfo info) {
+        if (mixin.endsWith(".AbilityHudSpringMixin")) {
+            for (var method : node.methods) for (var instruction : method.instructions.toArray()) {
+                if (instruction instanceof MethodInsnNode call && call.getOpcode() == Opcodes.INVOKESTATIC
+                        && call.owner.equals("net/ltxprogrammer/changed/util/Transition")
+                        && call.name.equals("easeInOutSine") && call.desc.equals("(F)F")) {
+                    boolean secondary = !method.name.equals("lambda$renderSelectedAbility$0");
+                    method.instructions.insertBefore(call, new InsnNode(secondary ? Opcodes.ICONST_1 : Opcodes.ICONST_0));
+                    call.owner = "net/parkabird/changedsynergy/client/AbilityHudMotion";
+                    call.name = "slide"; call.desc = "(FZ)F";
+                    method.maxStack++;
+                } else if (instruction instanceof MethodInsnNode call && call.getOpcode() == Opcodes.INVOKESTATIC
+                        && call.owner.equals("net/ltxprogrammer/changed/client/gui/AbilityOverlay")
+                        && call.name.equals("renderBackground")) {
+                    boolean secondary = !method.name.equals("lambda$renderSelectedAbility$0");
+                    method.instructions.insertBefore(call, new InsnNode(secondary ? Opcodes.ICONST_1 : Opcodes.ICONST_0));
+                    call.owner = "net/parkabird/changedsynergy/client/AbilityHudMotion";
+                    call.desc = call.desc.replace(")V", "Z)V");
+                    method.maxStack++;
+                }
+            }
+            return;
+        }
         boolean jeiInterface = mixin.endsWith(".JeiMouseOverInterfaceMixin");
         if (jeiInterface || mixin.endsWith(".JeiMouseOverMappingMixin")) {
             // Lambda classes are generated after Mixin. Their factory's SAM name

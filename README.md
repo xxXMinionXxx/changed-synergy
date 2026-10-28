@@ -17,7 +17,9 @@
 
 Changed: Synergy turns aggressive latex creatures into neighbors you can get along with. Answer a greeting, offer a gift and earn their trust over time. Creatures have persistent names, personalities and memories; friendships can lead to companion bonds, shared adventures and a home around the campfire.
 
-**1.1.4 focuses on TrueTransfur integration.** With **TrueTransfur 2.0.0**, begin as a native latex creature, choose a species through an animated archive, speak in character and interact with other players in PLAYER or INSTINCT mode. TrueTransfur is optional: NPC relationships, camps and companion features work without it. Backward compatibility with **1.0.1** is retained; the expanded Instinct features require 2.0.0.
+**1.1.5 adds Latex Silk Moth**, a separate four-armed species with articulated antennae and a gentle wing idle. See the [species and testing guide](docs/LATEX_SILK_MOTH.md). With **TrueTransfur 2.x**, begin as a native latex creature, choose a species through an animated archive, speak in character and interact with other players in PLAYER or INSTINCT mode. TrueTransfur is optional: NPC relationships, camps and companion features work without it. Starting with 1.1.5, TrueTransfur 1.0.1 compatibility is no longer maintained or tested.
+
+The new species also include [Latex Swordfish](docs/LATEX_SWORDFISH.md), an open-ocean swimmer with a Riptide-style rush, and [Latex Muntjac](docs/LATEX_MUNTJAC.md), a jungle deer relative with animated upright ears. Both have natural spawns, native origins and matching transfur items.
 
 ## Player guides
 
@@ -32,7 +34,7 @@ Start with the [guide directory](docs/README.md), or choose a topic:
 | [Settings reference](docs/SETTINGS_GUIDE.md) · [中文](docs/SETTINGS_GUIDE.zh-CN.md) | Defaults, ranges and server-controlled options |
 | [Server configuration](docs/SERVER_CONFIGURATION.md) | Operator commands, multiplayer settings and world rules |
 
-See the [1.1.4-hotfix.2 release notes](docs/CHANGELOG-1.1.4-hotfix.2-full.md) for the latest fixes and the full changes since 1.1.3.
+See the [combined 1.1.5 notes](docs/CHANGELOG-1.1.5.md) for changes since [1.1.4-hotfix.2](docs/CHANGELOG-1.1.4-hotfix.2-full.md).
 
 ## What you can do
 
@@ -56,8 +58,8 @@ See the [1.1.4-hotfix.2 release notes](docs/CHANGELOG-1.1.4-hotfix.2-full.md) fo
 | Minecraft | 1.20.1 | Yes |
 | Forge | 47.4.x | Yes |
 | Changed | 0.15.7 | Yes |
-| TrueTransfur | 2.0.0; backward compatibility with 1.0.1 | For native origins and TrueTransfur features |
-| Mixin Args | 1.0 or newer | When using TrueTransfur 2.0.0 |
+| TrueTransfur | 2.x | For native origins and TrueTransfur features |
+| Mixin Args | 1.0 or newer | When using TrueTransfur 2.x |
 | Changed Addon Plus | 2.9.2c | No |
 | Changed Vanilla | 1.0.1 | No |
 | Changed Extras | 1.1.8b | No |
@@ -70,7 +72,7 @@ The [compatibility guide](COMPATIBILITY.md) covers other integrations and their 
 
 1. Install Forge 47.4.x for Minecraft 1.20.1.
 2. Put Changed 0.15.7 and one Synergy JAR in the instance's `mods` folder.
-3. For native origins and Instinct gameplay, add TrueTransfur 2.0.0 and its required Mixin Args dependency. Add other integrations if wanted.
+3. For native origins and Instinct gameplay, add TrueTransfur 2.x and its required Mixin Args dependency. Add other integrations if wanted.
 4. In multiplayer, install the same Synergy build and the relevant dependencies on the server and every client.
 
 Back up important worlds before updating. For an existing world, review the server's **Starting Origin Selection** rule and use the [native-origin guide](docs/NATIVE_ORIGINS.md) to configure selection.

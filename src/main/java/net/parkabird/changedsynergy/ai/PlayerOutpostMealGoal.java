@@ -260,6 +260,7 @@ public final class PlayerOutpostMealGoal extends Goal {
 
     private static boolean idleAvailable(ChangedEntity mob, boolean allowSeat) {
         return PlayerOutpostService.operational(mob) && mob.isAlive() && !mob.isNoAi() && !mob.isSleeping() && !mob.isLeashed()
+                && !CompanionAutoEatGoal.active(mob)
                 && mob.getTarget() == null && !mob.isVehicle()
                 && (!mob.isUsingItem() || mob.getPersistentData().getBoolean(USING))
                 && (!mob.isPassenger() || PlayerOutpostRestGoal.isResting(mob) || allowSeat && ownsSeat(mob))
@@ -453,12 +454,12 @@ public final class PlayerOutpostMealGoal extends Goal {
     }
 
     private static int storedCount(Container storage, ItemStack food) {
-        int count = 0;
+        long count = 0;
         for (int slot = 0; slot < storage.getContainerSize(); slot++) {
             ItemStack existing = storage.getItem(slot);
             if (ItemStack.isSameItemSameTags(food, existing)) count += existing.getCount();
         }
-        return count;
+        return (int)Math.min(Integer.MAX_VALUE, count);
     }
 
     private static Container personalInventory(ChangedEntity mob) {
@@ -482,7 +483,7 @@ public final class PlayerOutpostMealGoal extends Goal {
         else returnToInventory(mob, saved);
     }
 
-    private static void returnToInventory(ChangedEntity mob, ItemStack stack) {
+    static void returnToInventory(ChangedEntity mob, ItemStack stack) {
         if (stack.isEmpty()) return;
         Container own = personalInventory(mob);
         ItemStack remainder = stack.copy();

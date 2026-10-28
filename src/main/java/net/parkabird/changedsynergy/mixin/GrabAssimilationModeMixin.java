@@ -27,6 +27,11 @@ public abstract class GrabAssimilationModeMixin {
             CallbackInfoReturnable<LatexAssimilationDecision<?>> callback) {
         GrabEntityAbilityInstance ability =
                 (GrabEntityAbilityInstance)(Object)this;
+        if (ability.entity.getEntity() instanceof ChangedEntity carrier && ability.grabbedEntity != null
+                && net.parkabird.changedsynergy.ai.CreaturePeerInteractionService.isPlayHold(carrier, ability.grabbedEntity)) {
+            callback.setReturnValue(null);
+            return;
+        }
         if (ability.suited || ability.grabbedEntity == null) {
             return;
         }

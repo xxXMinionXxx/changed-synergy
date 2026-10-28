@@ -48,6 +48,14 @@ public final class TrueTransfurCameraRegression {
                 stage=1;
             }
             if(mc.level==null||mc.player==null||!mc.hasSingleplayerServer())return;
+            if(stage==1&&Boolean.getBoolean("changed_synergy.chaseLiveOnly")&&mc.getOverlay()==null&&mc.player.tickCount>=20) stage=4;
+            if(stage==1&&Boolean.getBoolean("changed_synergy.silkVisualOnly")&&mc.getOverlay()==null&&mc.player.tickCount>=20) {
+                mc.setScreen(null);
+                TakeoverGuiClientRegression.run(mc);
+                ChasePlayClientRegression.run(mc);
+                October18UiRegression.run(mc);
+                stage=4;return;
+            }
             if(stage==1&&mc.player.tickCount>=60) {
                 var id=mc.player.getUUID();
                 switchTask=mc.getSingleplayerServer().submit(()->{
@@ -83,8 +91,15 @@ public final class TrueTransfurCameraRegression {
                 switchTask.join();
                 if((boolean)Class.forName("com.lugert.true_transfur.client.TransfurClientState").getMethod("isInstinct").invoke(null))return;
                 TakeoverGuiClientRegression.run(mc);
+                ChasePlayClientRegression.run(mc);
                 October18UiRegression.run(mc);
-                System.out.println("TT_CAMERA_REGRESSION_PASS: actual TT camera arguments preserved and takeover observation retained");
+                stage=4;
+            }
+            if(stage==4&&ChasePlayLiveClientRegression.tick(mc)) stage=5;
+            if(stage==5&&ChasePlayRulesLiveRegression.tick(mc)) {
+                System.out.println(Boolean.getBoolean("changed_synergy.silkVisualOnly")
+                        ?"SILK_VISUAL_CLIENT_PASS: actual models, original grey badge and native wheel/HUD alignment"
+                        :"TT_CAMERA_REGRESSION_PASS: actual TT camera arguments preserved and takeover observation retained");
                 finished=true;mc.stop();
             }
         }catch(Throwable failure){System.err.println("TT_CAMERA_REGRESSION_FAIL");failure.printStackTrace();finished=true;mc.stop();}

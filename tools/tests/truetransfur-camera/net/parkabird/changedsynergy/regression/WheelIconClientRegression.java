@@ -29,7 +29,8 @@ final class WheelIconClientRegression {
                 ChangedTransfurVariants.WHITE_LATEX_WOLF_MALE,
                 ChangedTransfurVariants.WHITE_LATEX_WOLF_FEMALE,
                 ChangedTransfurVariants.DARK_LATEX_WOLF_MALE,
-                ChangedTransfurVariants.LATEX_HUMAN);
+                ChangedTransfurVariants.LATEX_HUMAN,
+                net.parkabird.changedsynergy.init.ChangedSynergyTransfurVariants.LATEX_SILK_MOTH);
         for(int scale:new int[]{2,3}) {
             mc.options.guiScale().set(scale);mc.resizeDisplay();
             RenderSystem.setProjectionMatrix(new org.joml.Matrix4f().setOrtho(0,mc.getWindow().getGuiScaledWidth(),
@@ -82,7 +83,7 @@ final class WheelIconClientRegression {
             } finally {target.destroyBuffers();mc.getMainRenderTarget().bindWrite(true);}
         }
         if(!failures.isEmpty())throw new AssertionError("RADIAL_ICON_VISIBILITY_FAILURE: "+failures);
-        System.out.println("RADIAL_ICON_VISIBILITY_CLIENT_REGRESSION_PASS: "+count+" real ability/frame pixel checks; six White forms, Dark Wolf and Latex Human, GUI scales 2/3; four translated camp actions");
+        System.out.println("RADIAL_ICON_VISIBILITY_CLIENT_REGRESSION_PASS: "+count+" real ability/frame pixel checks; six White forms, Dark Wolf, Latex Human and Silk Moth, GUI scales 2/3; four translated camp actions");
     }
     private static NativeImage capture(Minecraft mc,TextureTarget target,Probe screen) {
         target.setClearColor(.08F,.09F,.10F,1);target.clear(Minecraft.ON_OSX);target.bindWrite(true);

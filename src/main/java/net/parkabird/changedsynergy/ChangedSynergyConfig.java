@@ -85,6 +85,9 @@ public final class ChangedSynergyConfig {
         public final ForgeConfigSpec.BooleanValue respectPacifiedLatexes;
         public final ForgeConfigSpec.BooleanValue pacifyTamedCompanions;
         public final ForgeConfigSpec.IntValue tamedCompanionRegeneration;
+        public final ForgeConfigSpec.BooleanValue companionAutoEat;
+        public final ForgeConfigSpec.BooleanValue companionSeating;
+        public final ForgeConfigSpec.BooleanValue companionRallyBoarding;
         public final ForgeConfigSpec.DoubleValue npcAwarenessRange;
         public final ForgeConfigSpec.BooleanValue patPacification;
         public final ForgeConfigSpec.BooleanValue balancedRelationships;
@@ -107,6 +110,8 @@ public final class ChangedSynergyConfig {
         public final ForgeConfigSpec.BooleanValue selfDefensePenaltyProtection;
         public final ForgeConfigSpec.BooleanValue allowMultipleBonds;
         public final ForgeConfigSpec.BooleanValue peacefulVillageRelations;
+        public final ForgeConfigSpec.BooleanValue peacefulDarkWhiteRelations;
+        public final ForgeConfigSpec.BooleanValue darkWhiteEnvironmentProtection;
         public final ForgeConfigSpec.BooleanValue nonRivalCombatProtection;
         public final ForgeConfigSpec.BooleanValue factionPursuit;
         public final ForgeConfigSpec.BooleanValue factionPursuitOverworldOnly;
@@ -155,6 +160,13 @@ public final class ChangedSynergyConfig {
         public final ForgeConfigSpec.IntValue takeoverPunitiveSeconds;
         public final ForgeConfigSpec.IntValue takeoverExoskeletonSeconds;
         public final ForgeConfigSpec.BooleanValue politeHumanInteraction;
+        public final ForgeConfigSpec.BooleanValue ambientPeerInteractions;
+        public final ForgeConfigSpec.BooleanValue playerFriendlyHugs;
+        public final ForgeConfigSpec.BooleanValue playerFriendlyHugPlayers;
+        public final ForgeConfigSpec.BooleanValue chasePlayGames;
+        public final ForgeConfigSpec.BooleanValue chasePlayShortHugs;
+        public final ForgeConfigSpec.IntValue chasePlayDurationSeconds;
+        public final ForgeConfigSpec.IntValue chasePlayCooldownSeconds;
         public final ForgeConfigSpec.DoubleValue politeApproachRange;
         public final ForgeConfigSpec.DoubleValue politeApproachSpeed;
         public final ForgeConfigSpec.IntValue politeResponseSeconds;
@@ -279,6 +291,14 @@ public final class ChangedSynergyConfig {
             tamedCompanionRegeneration = builder
                     .comment("Regeneration level for native latex pets; zero disables it.")
                     .defineInRange("TamedCompanionRegeneration", 0, 0, 5);
+            companionAutoEat = builder.comment("Let bonded and friendly creatures eat food from their own inventory below 60% health (35% in combat).",
+                            "Uses real food nutrition, saturation, effects and containers; checks every 10 ticks with a 3-second meal cooldown.",
+                            "Prefers useful recovery without wasting precious food; golden apples require 35% health, enchanted ones 20%. Critical bonded wrapping takes priority.")
+                    .define("CompanionAutoEat", true);
+            companionSeating = builder.comment("Allow trusted friends and bonds to use player-designated seats. Does not force admission or displace passengers.")
+                    .define("CompanionSeating", true);
+            companionRallyBoarding = builder.comment("Allow nearby following companions to board the player's vehicle. Requires CompanionSeating.")
+                    .define("CompanionRallyBoarding", true);
             npcAwarenessRange = builder
                     .comment("Maximum radius used to evaluate player and latex-creature relationships.")
                     .defineInRange("NpcAwarenessRange", 32.0, 8.0, 96.0);
@@ -308,12 +328,13 @@ public final class ChangedSynergyConfig {
                     .comment("Let aquatic friends wrap a player after actual drowning damage.",
                             "BondedEmergencyRescue must also be enabled.")
                     .define("AquaticFriendDrowningRescue", true);
-            bondedKinConfinement = builder.comment("Let bonded companions confine owners after repeated witnessed same-faction kills.")
+            bondedKinConfinement = builder.comment("After repeated witnessed same-faction kills, latex companions take over human owners,",
+                            "or carry transformed owners away without altering their form. Organic companions always use a carry.")
                     .define("BondedKinConfinement", true);
             bondedKinKillBaseLimit = builder.comment("Base number of witnessed same-faction kills before bonded confinement; affection adds tolerance.")
                     .defineInRange("BondedKinKillBaseLimit", 3, 1, 20);
             changedVanillaRelationshipAnimalProtection = builder
-                    .comment("Prevent Changed Vanilla creatures with established relationships from infecting animals.",
+                    .comment("Prevent latex creatures with at least one Familiar relationship from infecting animals when Changed Vanilla is installed.",
                             "The separate respected-human farm protection remains active when this is disabled.")
                     .define("ChangedVanillaRelationshipAnimalProtection", true);
             companionMonsterAssistOnly = builder
@@ -327,8 +348,18 @@ public final class ChangedSynergyConfig {
                     .comment("Allow one player to form bonds with several creatures.",
                             "When disabled, voluntary transfur remains available but creates no new bond if the player already has one.")
                     .define("AllowMultipleBonds", false);
+            peacefulDarkWhiteRelations = builder
+                    .comment("Treat Dark and White latex as peaceful competitors instead of automatic enemies.",
+                            "Actual aggression and hostile standing still allow retaliation. Environment protection has its own independent setting.")
+                    .define("PeacefulDarkWhiteRelations", true);
+            darkWhiteEnvironmentProtection = builder
+                    .comment("Protect Dark and White faction creatures and transformed players from each other's environmental latex hazards.",
+                            "This includes latex blocks, fluids, puddles and crystal contact; it does not block creature attacks or deliberate item use.",
+                            "Independent of PeacefulDarkWhiteRelations.")
+                    .define("DarkWhiteEnvironmentProtection", true);
             peacefulVillageRelations = builder
-                    .comment("Keep Changed creatures, villagers, wandering traders, and village protectors out of mutual combat.",
+                    .comment("Keep Changed creatures, including transformed players, peaceful with villagers, wandering traders and village protectors.",
+                            "Player aggression and genuine village reputation penalties still allow retaliation.",
                             "Additional civilian and protector entity types can be supplied through Changed: Synergy entity tags.")
                     .define("PeacefulVillageRelations", true);
             nonRivalCombatProtection = builder
@@ -338,6 +369,28 @@ public final class ChangedSynergyConfig {
             politeHumanInteraction = builder
                     .comment("Let polite individuals approach unfamiliar humans before deciding to hunt.")
                     .define("PoliteHumanInteraction", true);
+            ambientPeerInteractions = builder
+                    .comment("Let safe, idle social NPCs pat one another and invite non-hostile playmates to play.",
+                            "Work, combat, rescue and owner commands take priority. Does not disable player-requested play.")
+                    .define("AmbientPeerInteractions", true);
+            playerFriendlyHugs = builder.comment("Let players switch their existing grab ability to harmless friendly hugs.")
+                    .define("PlayerFriendlyHugs", true);
+            playerFriendlyHugPlayers = builder.comment("Allow friendly hugs of players; Changed's player-grab permission still applies.")
+                    .define("PlayerFriendlyHugPlayers", true);
+            chasePlayGames = builder
+                    .comment("Enable land and aquatic chase games between NPCs and in the ordinary branch of Play together.",
+                            "Disabling restores the previous short play response; hypnosis practice and random friendly hugs are unchanged.")
+                    .define("ChasePlayGames", true);
+            chasePlayShortHugs = builder
+                    .comment("Allow suitable creatures to end a successful chase with a harmless two-second hug.",
+                            "Disabling uses a touch celebration and does not disable other friendly hugs.")
+                    .define("ChasePlayShortHugs", true);
+            chasePlayDurationSeconds = builder
+                    .comment("Chase duration after the three-second head start.")
+                    .defineInRange("ChasePlayDurationSeconds", 15, 5, 120);
+            chasePlayCooldownSeconds = builder
+                    .comment("Minimum interval between automatic NPC chase invitations. Player Play together keeps its existing cooldown.")
+                    .defineInRange("ChasePlayCooldownSeconds", 180, 180, 7200);
             politeApproachRange = builder
                     .comment("Maximum range at which a polite individual begins a cautious greeting.")
                     .defineInRange("PoliteApproachRange", 12.0, 4.0, 32.0);
@@ -588,7 +641,7 @@ public final class ChangedSynergyConfig {
             telepathyEnabled = builder
                     .comment("Enable understanding through permanent telepathy, transformed bodies, hypnosis and takeover.",
                             "Disabling this pauses unlock progress and uses creature vocalizations instead. Saved progress is retained.",
-                            "An enabled supported Translator can still interpret speech; hypnosis and takeover gameplay remain available.")
+                            "Direct speakers and enabled supported Translators remain understandable; hypnosis and takeover gameplay remain available.")
                     .define("TelepathyEnabled", true);
             telepathyUnlockTransfurs = builder
                     .comment("Completed non-suit transformations needed to permanently understand telepathic speech.",

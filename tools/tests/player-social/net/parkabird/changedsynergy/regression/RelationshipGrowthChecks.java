@@ -330,11 +330,12 @@ final class RelationshipGrowthChecks {
         var personality = mob.getPersistentData().getCompound("ChangedSynergyPersonality");
         CreaturePersonality.setDominantTrait(mob, CreaturePersonality.Trait.POLITE);
         check(CreaturePersonality.has(mob, CreaturePersonality.Trait.POLITE) && !CreaturePersonality.has(mob, CreaturePersonality.Trait.PLAYFUL)
-                && !PlayfulFriendTransfurGoal.eligible(mob, player) && !CreaturePersonality.dominantTrait(mob).behaviorOnly(),
-                "Polite is an exclusive behavior trait and cannot select dialogue");
+                && !PlayfulFriendTransfurGoal.eligible(mob, player) && CreaturePersonality.dominantTrait(mob) == CreaturePersonality.Trait.POLITE,
+                "Explicit Polite assignment is primary and excludes playful pranks");
         CreaturePersonality.setDominantTrait(mob, CreaturePersonality.Trait.PLAYFUL);
-        check(CreaturePersonality.has(mob, CreaturePersonality.Trait.PLAYFUL) && !CreaturePersonality.has(mob, CreaturePersonality.Trait.POLITE),
-                "Explicit Playful assignment replaces Polite without replacing the primary personality");
+        check(CreaturePersonality.has(mob, CreaturePersonality.Trait.PLAYFUL) && !CreaturePersonality.has(mob, CreaturePersonality.Trait.POLITE)
+                        && CreaturePersonality.dominantTrait(mob) == CreaturePersonality.Trait.PLAYFUL,
+                "Explicit Playful assignment replaces Polite as the primary personality");
         for (int i = 0; i < 120; i++) {
             ChangedEntity generated = npc(player, false); generated.getPersistentData().remove("ChangedSynergyPersonality");
             CreaturePersonality.ensure(generated);
@@ -567,8 +568,8 @@ final class RelationshipGrowthChecks {
             CONFIG.telepathyEnabled.set(true);
             check(TelepathyService.canUnderstand(player), "Re-enabling telepathy restores existing understanding immediately");
             network.putBoolean("UnderstandsNetwork", false); network.putInt("CompletedTransfurs", 0);
-            check(!(boolean)understood.invoke(null, ordinary, player) && (boolean)understood.invoke(null, hypnotist, player),
-                    "Disabling Translator support does not give every human universal understanding");
+            check(!(boolean)understood.invoke(null, ordinary, player) && !(boolean)understood.invoke(null, hypnotist, player),
+                    "Without translation, an idle hypno cat does not give humans universal understanding");
             CONFIG.telepathyUnlockTransfurs.set(0); TelepathyService.recordCompletedTransfur(player, instance);
             check(network.getInt("CompletedTransfurs") == 1 && !TelepathyService.canUnderstand(player),
                     "Zero unlock threshold only prevents new unlocks");

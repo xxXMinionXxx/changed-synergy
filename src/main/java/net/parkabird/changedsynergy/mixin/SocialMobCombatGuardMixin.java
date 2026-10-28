@@ -23,6 +23,11 @@ public abstract class SocialMobCombatGuardMixin {
             LivingEntity target,
             CallbackInfoReturnable<Boolean> callback) {
         LivingEntity attacker = (LivingEntity)(Object)this;
+        if (!attacker.level().isClientSide && attacker instanceof net.minecraft.world.entity.Mob village
+                && target != null && LatexCreatureCombatRules.mustRejectVillageTarget(village, target)) {
+            callback.setReturnValue(false);
+            return;
+        }
         if (!(attacker instanceof ChangedEntity changed)
                 || changed.level().isClientSide) {
             return;

@@ -65,6 +65,20 @@ public final class BondedRevivalData extends SavedData {
         return copies;
     }
 
+    /** Only unused death records belonging to this player can be recalled. */
+    public Map<UUID, CompoundTag> availableTo(UUID player) {
+        Map<UUID, CompoundTag> available = new LinkedHashMap<>();
+        records.forEach((token, record) -> {
+            if (!record.hasUUID("OldEntity") || !record.contains("Snapshot", Tag.TAG_COMPOUND)) return;
+            String state = record.getString("State");
+            if (!(state.equals("broken") || state.equals("repaired") || state.equals("archived"))) return;
+            boolean bonded = record.hasUUID("Owner") && player.equals(record.getUUID("Owner"));
+            for (Tag bond : record.getList("Bonds", Tag.TAG_STRING)) bonded |= player.toString().equals(bond.getAsString());
+            if (bonded) available.put(token, record.copy());
+        });
+        return available;
+    }
+
     public boolean transition(UUID token, String expected, String next) {
         CompoundTag record = records.get(token);
         if (record == null || !expected.equals(record.getString("State"))) {

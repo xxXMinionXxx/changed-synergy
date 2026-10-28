@@ -73,12 +73,17 @@ public final class GrabQteClientState {
         }
         GrabEntityAbilityInstance ability = AbstractAbility.getAbilityInstance(
                 grabber, ChangedAbilities.GRAB_ENTITY_ABILITY.get());
-        if (ability == null || ability.grabbedEntity != grabbed) {
+        if (ability == null || ability.grabbedEntity != grabbed
+                && net.parkabird.changedsynergy.ai.PlayerHugService.escapePlayer(ability) != grabbed) {
             return false;
         }
         KeyReference current = decodeKey(packet.currentKey());
-        // Changed's seed packet must initialize its generator before a synced
-        // key lets native input handling advance that generator. Retry via PENDING.
+        if (packet.escapeDraws() < 0) return false;
+        if (packet.escapeDraws() > 0) {
+            ((net.parkabird.changedsynergy.ai.GrabEscapeState)ability)
+                    .changedSynergy$restoreEscape(packet.escapeSeed(), packet.escapeDraws());
+        }
+        // Legacy/local packets without a sequence still wait for the native seed.
         if (current != null && ability.escapeKeyRandom == null) {
             return false;
         }

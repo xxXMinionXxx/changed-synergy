@@ -7,6 +7,10 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import net.ltxprogrammer.changed.entity.ChangedEntity;
+import net.minecraft.server.level.ServerPlayer;
+import net.parkabird.changedsynergy.ai.HumanBoundaryService;
 
 /**
  * Some target-event combinations can clear a mob's revenge target between
@@ -19,6 +23,12 @@ public abstract class HurtByTargetGoalNullGuardMixin
             Mob mob,
             boolean mustSee) {
         super(mob, mustSee);
+    }
+
+    @Inject(method = {"canUse", "m_8036_"}, at = @At("HEAD"), cancellable = true, remap = false)
+    private void changedSynergy$acceptedBoundary(CallbackInfoReturnable<Boolean> callback) {
+        if (mob instanceof ChangedEntity creature && mob.getLastHurtByMob() instanceof ServerPlayer player
+                && HumanBoundaryService.isBackingOff(creature, player)) callback.setReturnValue(false);
     }
 
     @Inject(

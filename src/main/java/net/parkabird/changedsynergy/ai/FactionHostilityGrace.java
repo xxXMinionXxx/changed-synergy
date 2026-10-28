@@ -50,6 +50,17 @@ public final class FactionHostilityGrace {
         calmAllLoaded(player);
     }
 
+    /** Fatal breakouts end both capture-time global grace and its source-faction lock. */
+    public static void endFatalTakeoverProtection(ServerPlayer player, ChangedEntity carrier) {
+        CompoundTag data = existingData(player);
+        if (data != null) data.remove(GLOBAL);
+        if (carrier != null) {
+            String group = FactionReputation.groupId(carrier);
+            if (data != null) data.remove(group);
+            PlayerPersistentData.get(player).getCompound(DAMAGE_LOCK).remove(group);
+        }
+    }
+
     public static void beginSecondary(ChangedEntity source, ServerPlayer player) {
         String group = FactionReputation.groupId(source);
         CompoundTag persisted = PlayerPersistentData.get(player);

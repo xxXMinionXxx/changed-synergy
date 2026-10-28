@@ -45,7 +45,6 @@ public final class AssimilationEcologyEvents {
             return;
         }
         if (event.getSourceEntity() instanceof ChangedEntity source
-                && ChangedVanillaCompat.suppliesDedicatedConversion(decision)
                 && ChangedVanillaCompat.protectsAnimalNearRespectedHuman(
                         source, victim)) {
             event.setCanceled(true);

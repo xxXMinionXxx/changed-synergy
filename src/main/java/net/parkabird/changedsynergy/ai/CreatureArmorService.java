@@ -97,6 +97,7 @@ public final class CreatureArmorService {
     /** Changed can remove a bonded body before its ordinary equipment-drop pass. */
     public static void dropBondedEquipment(ChangedEntity creature) {
         if (creature.level().isClientSide) return;
+        CompanionAutoEatGoal.cleanup(creature);
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             ItemStack equipped = creature.getItemBySlot(slot);
             if (equipped.isEmpty()) continue;

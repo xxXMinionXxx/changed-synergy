@@ -512,8 +512,7 @@ public final class TerritoryClientState {
     }
 
     private static float smooth(float value) {
-        float clamped = clamp(value);
-        return clamped * clamped * (3.0F - 2.0F * clamped);
+        return UiMotion.transition(value);
     }
 
     private static float clamp(float value) {

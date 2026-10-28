@@ -185,6 +185,11 @@ public final class LatexSocialEvents {
         }
         boolean personalSocial =
                 CreatureSocialProfile.allowsPersonalRelationship(mob);
+        if (mob.goalSelector.getAvailableGoals().stream().noneMatch(wrapped -> wrapped.getGoal()
+                instanceof net.parkabird.changedsynergy.ai.CreaturePeerInteractionGoal)) {
+            mob.goalSelector.addGoal(net.parkabird.changedsynergy.ai.CreaturePeerInteractionGoal.PRIORITY,
+                    new net.parkabird.changedsynergy.ai.CreaturePeerInteractionGoal(mob));
+        }
         if (!LatexSocialMemory.bondedPlayerUuids(mob).isEmpty()) {
             BondedCreatureLifecycle.track(mob);
             LatexSocialMemory.suppressBondedAvoidanceGoals(mob);
@@ -222,6 +227,9 @@ public final class LatexSocialEvents {
         boolean personalSocial =
                 CreatureSocialProfile.allowsPersonalRelationship(mob);
         // Keep door and companion guards after optional mods rebuild native selectors, too.
+        if (personalSocial && mob.goalSelector.getAvailableGoals().stream().noneMatch(wrapped -> wrapped.getGoal()
+                instanceof net.parkabird.changedsynergy.ai.CompanionAutoEatGoal))
+            mob.goalSelector.addGoal(-2,new net.parkabird.changedsynergy.ai.CompanionAutoEatGoal(mob));
         for (var wrapped : mob.goalSelector.getAvailableGoals().stream().toList()) {
             if (wrapped.getGoal().getClass() == net.minecraft.world.entity.ai.goal.OpenDoorGoal.class) {
                 mob.goalSelector.removeGoal(wrapped.getGoal());
@@ -309,8 +317,7 @@ public final class LatexSocialEvents {
                 .noneMatch(wrapped -> wrapped.getGoal() instanceof BondedEmergencySuitGoal)) {
             mob.goalSelector.addGoal(-3, new BondedEmergencySuitGoal(mob));
         }
-        if (LatexSocialMemory.isOrganic(mob)
-                && !CreatureSocialProfile.isGrabMechanicExcluded(mob)
+        if (!CreatureSocialProfile.isGrabMechanicExcluded(mob)
                 && mob.goalSelector.getAvailableGoals().stream()
                         .noneMatch(wrapped -> wrapped.getGoal()
                                 instanceof net.parkabird.changedsynergy.ai.OrganicOwnerEvacuationGoal)) {
@@ -915,6 +922,13 @@ public final class LatexSocialEvents {
     /** Opens either the owner wheel or an acquaintance's dedicated social wheel. */
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onBondedPetInteract(PlayerInteractEvent.EntityInteract event) {
+        if (event.getHand() == InteractionHand.MAIN_HAND && event.getEntity() instanceof ServerPlayer playmate
+                && event.getTarget() instanceof LivingEntity target
+                && net.parkabird.changedsynergy.ai.CreaturePeerInteractionService.playerTouch(playmate, target)) {
+            event.setCancellationResult(InteractionResult.SUCCESS);
+            event.setCanceled(true);
+            return;
+        }
         if (net.parkabird.changedsynergy.ai.PlayerSocialService.handleInteraction(event)) return;
         if (CreatureArmorService.handleInteraction(event)) {
             return;
@@ -1471,9 +1485,9 @@ public final class LatexSocialEvents {
     public static void onLivingTick(LivingEvent.LivingTickEvent event) {
         if (event.getEntity() instanceof Mob villageMob
                 && !villageMob.level().isClientSide
-                && villageMob.getTarget() instanceof ChangedEntity target
-                && LatexCreatureCombatRules.mustRejectVillageTarget(villageMob, target)) {
-            LatexCreatureCombatRules.disengage(villageMob, target);
+                && villageMob.getTarget() != null
+                && LatexCreatureCombatRules.mustRejectVillageTarget(villageMob, villageMob.getTarget())) {
+            LatexCreatureCombatRules.disengage(villageMob, villageMob.getTarget());
             return;
         }
         if (!(event.getEntity() instanceof ChangedEntity mob)
@@ -1730,6 +1744,7 @@ public final class LatexSocialEvents {
 
     /** Called from the optional Changed Addon pat event bridge. */
     public static void onPatted(ChangedEntity mob, ServerPlayer player) {
+        if (net.parkabird.changedsynergy.ai.CreaturePeerInteractionService.isPlaymate(player, mob)) return;
         if (!LatexSocialMemory.isSocialLatex(mob)
                 || !mob.isAlive()
                 || mob.isSleeping()
@@ -1963,6 +1978,7 @@ public final class LatexSocialEvents {
     }
 
     private static void tryPatPlayer(ServerPlayer player) {
+        if (net.parkabird.changedsynergy.ai.CreaturePeerInteractionService.active(player)) return;
         if (!(player.level() instanceof ServerLevel level)) {
             return;
         }
@@ -1978,6 +1994,7 @@ public final class LatexSocialEvents {
         List<ChangedEntity> candidates = level.getEntitiesOfClass(
                         ChangedEntity.class, player.getBoundingBox().inflate(3.5),
                         mob -> mob.isAlive()
+                                && !net.parkabird.changedsynergy.ai.CreaturePeerInteractionService.active(mob)
                                 && PatAnimationService.canNpcPat(mob)
                                 && LatexSocialMemory.isSocialLatex(mob)
                                 && CreatureSocialProfile.allowsPersonalRelationship(mob))

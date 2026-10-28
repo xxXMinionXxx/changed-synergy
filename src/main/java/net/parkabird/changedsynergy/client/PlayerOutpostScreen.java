@@ -247,16 +247,14 @@ public final class PlayerOutpostScreen extends AbstractContainerScreen<PlayerOut
 
     @Override
     protected void renderBg(GuiGraphics graphics, float partialTick, int mouseX, int mouseY) {
-        graphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xFF303030);
-        graphics.fill(leftPos + 3, topPos + 3, leftPos + imageWidth - 3,
-                topPos + imageHeight - 3, 0xFFC6C6C6);
-        graphics.fill(leftPos + 7, topPos + 74, leftPos + imageWidth - 7,
-                topPos + lowerY(177), 0xFF8B8B8B);
+        InventoryFrame.draw(graphics, leftPos, topPos, imageWidth, imageHeight);
+        InventoryFrame.inset(graphics, leftPos + 7, topPos + 74,
+                imageWidth - 14, lowerY(177) - 74);
     }
 
     @Override
     protected void renderLabels(GuiGraphics graphics, int mouseX, int mouseY) {
-        int dark = 0x303030;
+        int dark = 0x404040;
         graphics.drawString(font, font.plainSubstrByWidth(title.getString(), imageWidth - 143), 9, 8, dark, false);
         Component home = Component.translatable(
                 menu.active() ? "menu.changed_synergy.player_outpost.active"

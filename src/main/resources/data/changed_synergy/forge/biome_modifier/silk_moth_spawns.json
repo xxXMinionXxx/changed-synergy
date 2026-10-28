@@ -1,0 +1,12 @@
+{
+  "type": "forge:add_spawns",
+  "biomes": "#changed_synergy:silk_moth_spawns",
+  "spawners": [
+    {
+      "type": "changed_synergy:latex_silk_moth",
+      "weight": 8,
+      "minCount": 1,
+      "maxCount": 2
+    }
+  ]
+}

@@ -13,6 +13,7 @@ import net.parkabird.changedsynergy.init.ChangedSynergyMobEffects;
 import net.parkabird.changedsynergy.init.ChangedSynergyItems;
 import net.parkabird.changedsynergy.init.ChangedSynergyRecipeSerializers;
 import net.parkabird.changedsynergy.init.ChangedSynergySoundEvents;
+import net.parkabird.changedsynergy.init.ChangedSynergyTransfurVariants;
 import net.parkabird.changedsynergy.network.ChangedSynergyNetwork;
 import net.parkabird.changedsynergy.world.LatexTerritoryBiomes;
 import net.minecraftforge.api.distmarker.Dist;
@@ -48,15 +49,21 @@ public final class ChangedSynergyMod {
         modBus.addListener(ChangedSynergyMod::onConfigLoading);
         modBus.addListener(ChangedSynergyMod::onCommonSetup);
         ChangedSynergyEntities.REGISTRY.register(modBus);
+        net.parkabird.changedsynergy.init.ChangedSynergyAbilities.REGISTRY.register(modBus);
+        ChangedSynergyTransfurVariants.REGISTRY.register(modBus);
         ChangedSynergyItems.REGISTRY.register(modBus);
         ChangedSynergyMenus.REGISTRY.register(modBus);
         ChangedSynergyMobEffects.REGISTRY.register(modBus);
         ChangedSynergyRecipeSerializers.REGISTRY.register(modBus);
         ChangedSynergySoundEvents.REGISTRY.register(modBus);
+        net.parkabird.changedsynergy.world.ResearchLabStructure.TYPES.register(modBus);
+        net.parkabird.changedsynergy.world.ResearchLabStructure.PIECES.register(modBus);
     }
 
     private static void onCommonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(LatexTerritoryBiomes::register);
+        event.enqueueWork(() -> net.ltxprogrammer.changed.init.ChangedTransfurVariants.Gendered.registerPair(
+                ChangedSynergyTransfurVariants.LATEX_MUNTJAC, ChangedSynergyTransfurVariants.LATEX_MUNTJAC_FEMALE));
     }
 
     private static void onConfigLoading(ModConfigEvent.Loading event) {

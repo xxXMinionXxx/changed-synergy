@@ -31,6 +31,8 @@ public final class PatInputClientEvents {
     private static KeyMapping addonKey;
     private static int activeTarget = -1;
     private static InputSource activeSource;
+    private static int reactionTarget = -1;
+    private static InputSource reactionSource;
     private static int nextRefresh;
 
     private PatInputClientEvents() {
@@ -43,6 +45,8 @@ public final class PatInputClientEvents {
         }
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == null || minecraft.level == null) {
+            reactionTarget = -1;
+            reactionSource = null;
             stop();
             return;
         }
@@ -52,6 +56,10 @@ public final class PatInputClientEvents {
                 ? InputSource.SYNERGY
                 : addonKey != null && addonKey.isDown()
                         ? InputSource.ADDON : null;
+        if (source == null) {
+            reactionTarget = -1;
+            reactionSource = null;
+        }
         if (source == null
                 || minecraft.screen != null
                 || !(minecraft.hitResult instanceof EntityHitResult hit)
@@ -64,6 +72,10 @@ public final class PatInputClientEvents {
         int targetId = target.getId();
         boolean newStroke = activeTarget != targetId || activeSource != source;
         if (newStroke || minecraft.player.tickCount >= nextRefresh) {
+            // A brief ray miss restarts the animation, not the held key's social reaction.
+            boolean react = reactionTarget != targetId || reactionSource != source;
+            reactionTarget = targetId;
+            reactionSource = source;
             activeTarget = targetId;
             activeSource = source;
             nextRefresh = minecraft.player.tickCount + 6;
@@ -71,7 +83,7 @@ public final class PatInputClientEvents {
                     new PatAnimationControlPacket(
                             targetId,
                             true,
-                            newStroke && source == InputSource.SYNERGY));
+                            react && source == InputSource.SYNERGY));
         }
     }
 

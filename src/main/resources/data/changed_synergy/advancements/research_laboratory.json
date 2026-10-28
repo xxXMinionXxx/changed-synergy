@@ -1,0 +1,68 @@
+{
+  "parent": "changed_synergy:root",
+  "display": {
+    "icon": {
+      "item": "minecraft:spyglass"
+    },
+    "title": {
+      "translate": "advancement.changed_synergy.research_laboratory.title"
+    },
+    "description": {
+      "translate": "advancement.changed_synergy.research_laboratory.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "water_tower_changed": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": {
+          "location": {
+            "structure": "changed_synergy:water_tower_changed"
+          }
+        }
+      }
+    },
+    "white_lab_tower": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": {
+          "location": {
+            "structure": "changed_synergy:white_lab_tower"
+          }
+        }
+      }
+    },
+    "red_lab_tower": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": {
+          "location": {
+            "structure": "changed_synergy:red_lab_tower"
+          }
+        }
+      }
+    },
+    "green_lab": {
+      "trigger": "minecraft:location",
+      "conditions": {
+        "player": {
+          "location": {
+            "structure": "changed_synergy:green_lab"
+          }
+        }
+      }
+    }
+  },
+  "requirements": [
+    [
+      "water_tower_changed",
+      "white_lab_tower",
+      "red_lab_tower",
+      "green_lab"
+    ]
+  ]
+}

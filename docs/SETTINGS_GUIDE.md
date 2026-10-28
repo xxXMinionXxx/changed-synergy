@@ -1,7 +1,7 @@
 # Settings guide
 
 This guide lists server settings, client preferences and world rules for
-Changed: Synergy 1.1.4, with their defaults and allowed values.
+Changed: Synergy 1.1.5, with their defaults and allowed values.
 
 Server settings live in `config/changed_synergy-common.toml`; client preferences
 live in `config/changed_synergy-client.toml`. World rules are saved in world data.
@@ -99,14 +99,17 @@ permission to ignore a disabled server feature.
 | Key | Default | Allowed range / choices | Purpose |
 | --- | --- | --- | --- |
 | `RELATIONSHIPS.TamedCompanionRegeneration` | `0` | 0 ~ 5 | Native Pet Regeneration: Regeneration level for native Changed pets. Zero disables it. |
+| `RELATIONSHIPS.CompanionAutoEat` | `true` | true / false | Companion Auto-Eating: Injured bonds and friends choose their own food by useful recovery and injury severity. Golden apples require 35% health, enchanted ones 20%. Native effects and containers are preserved. Critical bonded wrapping takes priority. Cooldown: 3 seconds. |
+| `RELATIONSHIPS.CompanionSeating` | `true` | true / false | Allow trusted friends and bonds to use designated seats. Stops pending boarding when disabled; safe dismount remains available. |
+| `RELATIONSHIPS.CompanionRallyBoarding` | `true` | true / false | Call nearby following companions onto the player's vehicle. Requires CompanionSeating. |
 | `RELATIONSHIPS.OrdinaryTransfurReversal` | `true` | true / false | Ordinary Transfur Reversal: Allow Synergy transfur reversal through negotiation, bonded companions, and sleep. Takeover separation and the /untf and /untransfur recovery commands remain available when disabled. |
 | `RELATIONSHIPS.OrganicSleepReversal` | `true` | true / false | Organic Sleep Reversal: Allow reversal of organic transfur after a completed night’s sleep. Requires Ordinary Transfur Reversal; permanent-transfur and native-origin protection still apply. |
 | `RELATIONSHIPS.ProtectiveReleaseRequests` | `true` | true / false | Protective Release Requests: After repeated danger rescues, cautious, protective, and sensitive companions may ask the player to request release more than once. Each request closes the radial menu; reopen it to ask again. |
 | `RELATIONSHIPS.BondedEmergencyRescue` | `true` | true / false | Bonded Emergency Rescue: Allow bonded latex companions to wrap endangered owners, organic companions to evacuate them, and aquatic friends to rescue drowning players when enabled separately. Manual wrapping and ordinary defense remain available. |
 | `RELATIONSHIPS.AquaticFriendDrowningRescue` | `true` | true / false | Aquatic Friend Drowning Rescue: Let aquatic friends wrap a player after actual drowning damage. Bonded Emergency Rescue must also be enabled. |
-| `RELATIONSHIPS.BondedKinConfinement` | `true` | true / false | Bonded Kin Confinement: Let bonded companions confine owners after repeated witnessed same-faction kills. |
+| `RELATIONSHIPS.BondedKinConfinement` | `true` | true / false | After repeated witnessed same-faction kills, bonds confine human owners through takeover or carry transformed owners away without changing their body. Organic bonds always use a safe carry. |
 | `RELATIONSHIPS.BondedKinKillBaseLimit` | `3` | 1 ~ 20 | Bonded Kin Kill Threshold: Base number of witnessed same-faction kills before confinement. Higher affection increases tolerance. |
-| `RELATIONSHIPS.ChangedVanillaRelationshipAnimalProtection` | `true` | true / false | Changed Vanilla Relationship Animal Protection: Prevent Changed Vanilla creatures with established relationships from infecting animals. Respected-human farm protection remains separate. |
+| `RELATIONSHIPS.ChangedVanillaRelationshipAnimalProtection` | `true` | true / false | Changed Vanilla Relationship Animal Protection: With Changed Vanilla installed, prevent creatures with trusted Familiar-or-higher relationships from infecting animals. Respected-human farm protection remains separate. |
 | `RELATIONSHIPS.CompanionMonsterAssistOnly` | `false` | true / false | Monster Combat Assistance Only: Friends and companions assist only against hostile monsters when you hit them or they hit you. |
 | `RELATIONSHIPS.SelfDefensePenaltyProtection` | `true` | true / false | Protect Self-defence from Relationship Penalties: Fighting a creature that attacked first does not reduce faction reputation or trigger witnesses' relationship and confinement penalties. Starting the fight yourself still counts. |
 | `RELATIONSHIPS.AllowMultipleBonds` | `false` | true / false | Multiple Bonds: Allow several bonded companions. When off, voluntary transfur still works without creating another bond. |
@@ -119,7 +122,9 @@ permission to ignore a disabled server feature.
 | `RELATIONSHIPS.FactionPursuitOverworldOnly` | `false` | true / false | Pursuit Squads: Overworld Only: When enabled, pursuit squads spawn only in the Overworld. By default, they can spawn in any dimension. |
 | `RELATIONSHIPS.IndependentFactionReputation` | `false` | true / false | Independent Faction Reputation: When enabled, gaining reputation with one faction never reduces a rival's reputation, so you can ally with every faction. Existing reputation losses are not restored. |
 | `RELATIONSHIPS.PostTransfurTruceSeconds` | `90` | 0 ~ 600 | Post-transfur Ceasefire: Seconds before latex factions may become hostile again after a transfur or takeover release. Set to 0 to disable it. |
-| `RELATIONSHIPS.PeacefulVillageRelations` | `true` | true / false | Peaceful Village Relations: Prevents mutual combat between Changed creatures and villagers, wandering traders, iron golems, or compatible village protectors. Enabled by default. |
+| `RELATIONSHIPS.PeacefulDarkWhiteRelations` | `true` | true / false | Keep Dark and White latex from attacking solely because of their factions. Disable to restore native rivalry. Genuine aggression and hostile standing still have consequences. |
+| `RELATIONSHIPS.DarkWhiteEnvironmentProtection` | `true` | true / false | Protect Dark and White creatures and transformed players from each other's environmental latex hazards. Does not change deliberate item use or creature attacks. Independent of peaceful relations. |
+| `RELATIONSHIPS.PeacefulVillageRelations` | `true` | true / false | Peaceful Village Relations: Keeps Changed creatures, including transformed players, peaceful with villagers, wandering traders, iron golems and compatible village protectors. Villagers do not flee players solely for their species. Actual player aggression and genuine village reputation still allow retaliation. Enabled by default. |
 | `RELATIONSHIPS.NonRivalCombatProtection` | `true` | true / false | Non-rival Latex Combat Protection: End non-rival NPC fights at 20% health (at least 1 health). Disable to allow normal lethal damage. Compatriot friendly-fire prevention, bonded safety and player combat rules remain separate. |
 
 ### Greetings and Social Behaviour
@@ -130,6 +135,11 @@ permission to ignore a disabled server feature.
 | `RELATIONSHIPS.PatPacification` | `true` | true / false | Pat Pacification: Allow a player's pat to stop a latex creature's pursuit and create a short ceasefire. Ordinary pat reactions and relationship progress still work when disabled. |
 | `RELATIONSHIPS.PlayfulFriendTransfur` | `true` | true / false | Playful Friends’ Transfur Attempts: Adult playful friends below 28 affection may occasionally try a friendly transfur. Playful and Polite are mutually exclusive behavior traits and do not select dialogue. A light bare-handed warning interrupts the attempt and keeps them settled for five minutes without reputation loss. |
 | `RELATIONSHIPS.PoliteHumanInteraction` | `true` | true / false | Greeting System: Polite individuals may greet unfamiliar humans before deciding whether to hunt. |
+| `RELATIONSHIPS.AmbientPeerInteractions` | `true` | true / false | Idle NPCs can pat each other and invite non-hostile neighbours to play. Work, combat, rescue and commands take priority. |
+| `RELATIONSHIPS.ChasePlayGames` | `true` | true / false | Ground chase games for NPCs and the ordinary Play together response. Existing hypnosis and random-hug outcomes are unchanged. |
+| `RELATIONSHIPS.ChasePlayShortHugs` | `true` | true / false | Suitable NPCs may finish a catch with a harmless two-second hug. Otherwise use a touch celebration. |
+| `RELATIONSHIPS.ChasePlayDurationSeconds` | `15` | 5 ~ 120 | Chase duration after the three-second head start. |
+| `RELATIONSHIPS.ChasePlayCooldownSeconds` | `180` | 180 ~ 7200 | Minimum interval between automatic NPC chase invitations. Player-requested play retains its existing cooldown. |
 | `RELATIONSHIPS.PoliteApproachRange` | `12.0` | 4.0 ~ 32.0 | Greeting Pathfinding Range: Maximum distance at which a polite individual begins a cautious greeting. |
 | `RELATIONSHIPS.PoliteApproachSpeed` | `0.42` | 0.05 ~ 1.5 | Greeting Pathfinding Speed: Navigation speed used while approaching a human politely. |
 | `RELATIONSHIPS.PoliteResponseSeconds` | `14` | 4 ~ 60 | Greeting Response Time: Seconds a polite individual waits for the human to respond with a pat. |
@@ -268,7 +278,7 @@ permission to ignore a disabled server feature.
 | --- | --- | --- | --- |
 | `DIALOGUE.UsesTranslator` | `true` | true / false | Addon Translator Support: An enabled Changed Addon Plus Translator interprets creature speech, even when telepathy is disabled. Turning this off disables the item bypass; it does not grant everyone telepathy. |
 | `DIALOGUE.AddonAnimalCalls` | `true` | true / false | Addon Animal Calls: Let compatible creatures use Changed Addon's animal calls for some mood-dependent reactions. |
-| `DIALOGUE.TelepathyEnabled` | `true` | true / false | Enable Telepathy: Allow permanent, transformed-body, hypnosis and takeover telepathic understanding. Turning this off pauses unlock progress and uses species vocalizations, while retaining saved progress. Supported enabled Translators still work; hypnosis and takeover gameplay are unchanged. |
+| `DIALOGUE.TelepathyEnabled` | `true` | true / false | Enable Telepathy: Allow permanent, transformed-body, hypnosis and takeover telepathic understanding. Turning this off pauses unlock progress and uses species vocalizations, while retaining saved progress. Direct speakers and supported enabled Translators remain understandable; hypnosis and takeover gameplay are unchanged. |
 | `DIALOGUE.TelepathyUnlockTransfurs` | `3` | 0 ~ 20 | Telepathy Unlock Transfurs: Completed standard transfurs needed for permanent telepathy. Set to 0 to prevent new unlocks while retaining existing understanding. Use Enable Telepathy to disable all telepathic understanding, including already unlocked players. |
 
 ### Changed Addon Plus Compatibility
@@ -279,6 +289,12 @@ permission to ignore a disabled server feature.
 | `RELATIONSHIPS.PacifyTamedCompanions` | `true` | true / false | Continuously Pacify Native Pets: Continuously refresh Pacified on native Changed pets so they do not lock onto targets by mistake. Requires Changed Addon Plus. |
 
 ## Client preferences
+
+### Player Nameplates
+
+| Key | Default | Allowed range / choices | Purpose |
+| --- | --- | --- | --- |
+| `PLAYER NAMES.ShowNativePlayerNames` | `true` | true / false | Allow overhead names for native TrueTransfur players, subject to TT's visibility rules. Disable to hide these labels locally. NPC names, chat, tab lists and social names are unaffected. |
 
 ### Transfur Feedback
 
@@ -306,6 +322,7 @@ permission to ignore a disabled server feature.
 | Key | Default | Allowed range / choices | Purpose |
 | --- | --- | --- | --- |
 | `TELEPATHY.TelepathicDanmaku` | `true` | true / false | On-screen Dialogue: Show ordinary creature dialogue in the screen overlay. Disable it to use chat instead. |
+| `TELEPATHY.UntranslatedVocalizations` | `true` | true / false | Untranslated Animal-call Text: Disable to hide unintelligible animal-call text from chat and dialogue overlays. Understood dialogue and actual sound effects are unchanged. |
 | `TELEPATHY.PopupHeightOffset` | `0.0` | -0.75 ~ 0.75 | Dialogue Popup Height Offset: Vertical offset as a fraction of screen height. Negative moves up, positive moves down; 0 keeps the original placement. |
 | `TELEPATHY.DanmakuHeightOffset` | `0.0` | -0.75 ~ 0.75 | Scrolling Dialogue Height Offset: Moves scrolling dialogue independently of popups. Negative moves up, positive moves down; 0 keeps the original placement. |
 | `TELEPATHY.DialogueDisplayMode` | `"AUTO"` | AUTO, POPUP, DANMAKU | Dialogue Display Style: Choose random popups or horizontal danmaku. Auto uses popups for English and danmaku for CJK languages. |
@@ -317,6 +334,12 @@ permission to ignore a disabled server feature.
 | --- | --- | --- | --- |
 | `TUTORIAL HINTS.MechanicHints` | `true` | true / false | Mechanic Hints: Show one-time hints for Synergy's important interactions. |
 | `TUTORIAL HINTS.NegotiationNextStepHint` | `true` | true / false | Negotiation Next-Step Hint: Show a suggested next argument during negotiation. Suggestions can be wrong; offering food makes them much more reliable. |
+
+### Interface Motion
+
+| Key | Default | Allowed range / choices | Purpose |
+| --- | --- | --- | --- |
+| `UI MOTION.ReducedUiMotion` | `false` | true / false | Removes prominent spring travel, wheel tilt and stagger delays while retaining short fades and selection feedback. Does not change timers, cooldowns, QTE judgment or entity animations. |
 
 ### Struggle Presentation
 
@@ -344,3 +367,10 @@ permission to ignore a disabled server feature.
 | `changedSynergyCreatureLife` | `true` | Changed: Synergy Creature Life: Enable creature routines, wild communities, gathering, player camps and Pure White reformation. Turning it off pauses these activities and keeps saved camp membership. Individual AI and work switches still apply; placing or harvesting blocks respects mobGriefing. |
 | `changedSynergyHypnosisQte` | `true` | Changed: Synergy Hypnosis Gaze Struggle: Enables Synergy's gaze-resistance sequence, control lock and mesmerized penalty. Changed's base hypnosis remains when disabled. |
 | `changedSynergyGrabQteEnhancements` | `true` | Changed: Synergy Grab QTE Enhancements: Enables server-synced grab prompts and the safety stun after escape. Changed's base grab remains when disabled, and creatures can attack again immediately after an escape. |
+
+## Player friendly hugs
+
+| Common config | Default | Effect |
+| --- | --- | --- |
+| `RELATIONSHIPS.PlayerFriendlyHugs` | `true` | Adds a harmless mode switch to the existing player grab option. Disabling safely releases active friendly holds. |
+| `RELATIONSHIPS.PlayerFriendlyHugPlayers` | `true` | Allows human and transformed player targets; Changed’s player-grab permission is still required. |

@@ -21,6 +21,9 @@ import net.parkabird.changedsynergy.client.RadialWheelAnimationAccess;
 import net.parkabird.changedsynergy.client.RadialWheelAnimations;
 import net.parkabird.changedsynergy.client.PlayerRelationshipScreen;
 import net.parkabird.changedsynergy.client.SocialInteractionScreen;
+import net.parkabird.changedsynergy.client.UiSpring;
+import net.parkabird.changedsynergy.client.UiMotion;
+import net.parkabird.changedsynergy.client.AbilityWheelInput;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -34,24 +37,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(value = AbstractRadialScreen.class, remap = false)
 public abstract class RadialScreenAnimationMixin
         implements RadialWheelAnimationAccess {
-    @Unique
-    private static final long FRAME_DURATION_MS = 205L;
-    @Unique
-    private static final long ICON_DURATION_MS = 145L;
-    @Unique
-    private static final long CENTER_DURATION_MS = 170L;
-    @Unique
-    private static final long SECTION_STAGGER_MS = 22L;
-    @Unique
-    private static final long INPUT_DELAY_MS = 240L;
-    @Unique
-    private static final long CLOSE_DURATION_MS = 255L;
-    @Unique
-    private static final long SWITCH_DURATION_MS = 245L;
-    @Unique
-    private static final long FULL_OPEN_DURATION_MS = FRAME_DURATION_MS
-            + ICON_DURATION_MS + SECTION_STAGGER_MS * 7L + 8L;
-
     @Shadow(remap = false)
     private int tickCount;
 
@@ -65,12 +50,6 @@ public abstract class RadialScreenAnimationMixin
     private long changedSynergy$openedAtNanos = System.nanoTime();
     @Unique
     private long changedSynergy$closingAtNanos;
-    @Unique
-    private long changedSynergy$closingOpenElapsedMs;
-    @Unique
-    private long changedSynergy$closingDurationMs = CLOSE_DURATION_MS;
-    @Unique
-    private boolean changedSynergy$reversingOpening;
     @Unique
     private boolean changedSynergy$closing;
     @Unique
@@ -87,6 +66,21 @@ public abstract class RadialScreenAnimationMixin
     private boolean changedSynergy$initialized;
     @Unique
     private boolean changedSynergy$pairedArrival;
+    @Unique private boolean changedSynergy$continuousSwitch;
+    @Unique private boolean changedSynergy$inheritedSlide;
+    @Unique private final UiSpring changedSynergy$visibility = new UiSpring(0);
+    @Unique private final UiSpring changedSynergy$panels = new UiSpring(1, 30, 1);
+    @Unique private final UiSpring changedSynergy$center = new UiSpring(0, 30, 1);
+    @Unique private UiSpring changedSynergy$horizontal = new UiSpring(0, 30, 1);
+    @Unique private final UiSpring changedSynergy$paging = new UiSpring(0, 32, 1);
+    @Unique private final UiSpring changedSynergy$tiltX = new UiSpring(0, 24, 0.9);
+    @Unique private final UiSpring changedSynergy$tiltY = new UiSpring(0, 24, 0.9);
+    @Unique private boolean changedSynergy$tiltPose;
+    @Unique private int changedSynergy$preselectedSlot = -1;
+    @Unique private final UiSpring[] changedSynergy$preselection = java.util.stream.IntStream.range(0, 8).mapToObj(i -> new UiSpring(0, 30, 1)).toArray(UiSpring[]::new);
+    @Unique private final UiSpring[] changedSynergy$highlights = java.util.stream.IntStream.range(0, 8).mapToObj(i -> new UiSpring(0, 30, 1)).toArray(UiSpring[]::new);
+    @Unique private final UiSpring[] changedSynergy$frames = java.util.stream.IntStream.range(0, 8).mapToObj(i -> new UiSpring(0, 30, 1)).toArray(UiSpring[]::new);
+    @Unique private final UiSpring[] changedSynergy$icons = java.util.stream.IntStream.range(0, 8).mapToObj(i -> new UiSpring(0)).toArray(UiSpring[]::new);
 
     @Inject(
             method = {"init", "m_7856_"},
@@ -104,6 +98,13 @@ public abstract class RadialScreenAnimationMixin
                             changedSynergy$self());
             changedSynergy$openedAtNanos = System.nanoTime();
             changedSynergy$selectedSection = -1;
+            if (changedSynergy$pairedArrival) {
+                for (var frame : changedSynergy$frames) frame.snap(1, changedSynergy$openedAtNanos);
+                changedSynergy$center.snap(1, changedSynergy$openedAtNanos);
+            }
+            if (changedSynergy$inheritedSlide) changedSynergy$visibility.snap(1, changedSynergy$openedAtNanos);
+            else changedSynergy$horizontal.snap(changedSynergy$restingOffset(), changedSynergy$openedAtNanos);
+            changedSynergy$paging.snap(viewOffset, changedSynergy$openedAtNanos);
         }
     }
 
@@ -113,11 +114,31 @@ public abstract class RadialScreenAnimationMixin
             remap = false,
             require = 1)
     private void changedSynergy$finishClosing(CallbackInfo callback) {
+        if (changedSynergy$continuousSwitch) {
+            changedSynergy$updateSprings();
+            if (!changedSynergy$completionRun && (UiMotion.reduced()
+                    || changedSynergy$panels.value(System.nanoTime()) <= 0.03
+                    || changedSynergy$closeElapsedMs() >= 200)) {
+                changedSynergy$completionRun = true;
+                Runnable completion = changedSynergy$completion;
+                changedSynergy$completion = null;
+                if (completion != null) completion.run();
+            }
+            if (changedSynergy$closeElapsedMs() >= 3_000) {
+                // A rejected menu request leaves the original container usable.
+                RadialWheelAnimations.cancelPendingSwitch();
+                changedSynergy$continuousSwitch = changedSynergy$closing = changedSynergy$switching = false;
+                if (changedSynergy$self() instanceof AbilityRadialScreen ability) AbilityWheelInput.closing(ability);
+                changedSynergy$updateSprings();
+            }
+            return;
+        }
         if (!changedSynergy$closing || changedSynergy$completionRun) {
             return;
         }
-        if (changedSynergy$closeElapsedMs()
-                < changedSynergy$closingDurationMs) {
+        changedSynergy$updateSprings();
+        long now = System.nanoTime();
+        if (changedSynergy$closeElapsedMs() < 350 && !changedSynergy$visibility.settled(now, 0.01)) {
             return;
         }
         changedSynergy$completionRun = true;
@@ -125,6 +146,54 @@ public abstract class RadialScreenAnimationMixin
         changedSynergy$completion = null;
         if (completion != null) {
             completion.run();
+        }
+    }
+
+    @Inject(method = {"render", "m_88315_"}, at = @At("TAIL"), remap = false, require = 1)
+    private void changedSynergy$finishRenderedClose(GuiGraphics graphics, int mouseX, int mouseY,
+            float partialTick, CallbackInfo callback) {
+        // Changed's ability screen overrides tick without delegating to containerTick.
+        // Rendering is shared by both native wheels and Synergy's social wheels.
+        changedSynergy$finishClosing(callback);
+    }
+
+    @Inject(method = {"renderBg", "m_7286_"}, at = @At("HEAD"), remap = false, require = 1)
+    private void changedSynergy$tiltWheel(GuiGraphics graphics, float partialTick,
+            int mouseX, int mouseY, CallbackInfo callback) {
+        var screen = changedSynergy$self();
+        boolean active = !UiMotion.reduced() && !changedSynergy$closing;
+        changedSynergy$preselectedSlot = !changedSynergy$closing
+                ? screen.getSectionAt(mouseX, mouseY).map(section -> Math.floorMod(section - viewOffset, 8)).orElse(-1) : -1;
+        long now = System.nanoTime();
+        float centerX = screen.width * 0.5F + changedSynergy$getHorizontalOffset();
+        changedSynergy$tiltX.target(active ? Math.max(-1, Math.min(1, (mouseY - screen.height * 0.5) / 120.0)) * -8 : 0, now);
+        changedSynergy$tiltY.target(active ? Math.max(-1, Math.min(1, (mouseX - centerX) / 120.0)) * 8 : 0, now);
+        if (UiMotion.reduced()) { changedSynergy$tiltX.snap(0, now); changedSynergy$tiltY.snap(0, now); }
+        float x = (float)changedSynergy$tiltX.value(now), y = (float)changedSynergy$tiltY.value(now);
+        changedSynergy$tiltPose = Math.abs(x) + Math.abs(y) > 0.001F;
+        if (!changedSynergy$tiltPose) return;
+        graphics.flush();
+        var view = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
+        view.pushPose();
+        view.translate(centerX + y * 0.4F, screen.height * 0.5F - x * 0.4F, 0);
+        double rx = Math.toRadians(x), ry = Math.toRadians(y);
+        // Project the tilted UI plane onto XY. Native ability models use large local
+        // Z offsets; rotating those depths would throw icons out of their frames.
+        view.mulPoseMatrix(new org.joml.Matrix4f()
+                .m00((float)Math.cos(ry)).m11((float)Math.cos(rx))
+                .m01((float)(Math.sin(rx) * Math.sin(ry))));
+        view.translate(-centerX, -screen.height * 0.5F, 0);
+        com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
+    }
+
+    @Inject(method = {"renderBg", "m_7286_"}, at = @At("TAIL"), remap = false, require = 1)
+    private void changedSynergy$restoreTilt(GuiGraphics graphics, float partialTick,
+            int mouseX, int mouseY, CallbackInfo callback) {
+        if (changedSynergy$tiltPose) {
+            graphics.flush();
+            com.mojang.blaze3d.systems.RenderSystem.getModelViewStack().popPose();
+            com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
+            changedSynergy$tiltPose = false;
         }
     }
 
@@ -137,9 +206,10 @@ public abstract class RadialScreenAnimationMixin
             int mouseX,
             int mouseY,
             CallbackInfoReturnable<Optional<Integer>> callback) {
-        if (changedSynergy$closing || viewTransitionTicksLeft > 0
-                || changedSynergy$openElapsedMs() < INPUT_DELAY_MS) {
+        if (changedSynergy$closing || changedSynergy$inheritedSlide && !changedSynergy$horizontal.settled(System.nanoTime(), 0.01)) {
             callback.setReturnValue(Optional.empty());
+        } else if (changedSynergy$self() instanceof AbilityRadialScreen ability && AbilityWheelInput.holding(ability)) {
+            callback.setReturnValue(AbilityWheelInput.selection(ability, mouseX, mouseY));
         }
     }
 
@@ -154,8 +224,7 @@ public abstract class RadialScreenAnimationMixin
             double mouseY,
             int button,
             CallbackInfoReturnable<Boolean> callback) {
-        if (changedSynergy$closing || viewTransitionTicksLeft > 0
-                || changedSynergy$openElapsedMs() < INPUT_DELAY_MS) {
+        if (changedSynergy$closing) {
             callback.setReturnValue(true);
             return;
         }
@@ -168,8 +237,20 @@ public abstract class RadialScreenAnimationMixin
     @Inject(method = {"scrollUp", "scrollDown"}, at = @At("HEAD"),
             cancellable = true, remap = false, require = 2)
     private void changedSynergy$finishScrollBeforeAnother(CallbackInfo callback) {
-        if (changedSynergy$closing || viewTransitionTicksLeft > 0
-                || changedSynergy$openElapsedMs() < INPUT_DELAY_MS) callback.cancel();
+        if (changedSynergy$closing) callback.cancel();
+    }
+
+    @Inject(method = {"scrollUp", "scrollDown"}, at = @At("TAIL"), remap = false, require = 2)
+    private void changedSynergy$retargetPage(CallbackInfo callback) {
+        viewTransitionTicksLeft = 0;
+        changedSynergy$paging.target(viewOffset, System.nanoTime());
+        if (changedSynergy$self() instanceof AbilityRadialScreen ability) AbilityWheelInput.pageChanged(ability);
+    }
+
+    @Inject(method = "getViewOffset", at = @At("HEAD"), cancellable = true, remap = false)
+    private void changedSynergy$springPage(CallbackInfoReturnable<Float> callback) {
+        if (UiMotion.reduced()) changedSynergy$paging.snap(viewOffset, System.nanoTime());
+        callback.setReturnValue((float)changedSynergy$paging.displayValue(System.nanoTime(), 0.001));
     }
 
     @Inject(
@@ -186,12 +267,16 @@ public abstract class RadialScreenAnimationMixin
         Minecraft minecraft = Minecraft.getInstance();
         boolean closeKey = keyCode == 256
                 || minecraft.options.keyInventory.matches(keyCode, scanCode);
+        if (!closeKey && changedSynergy$inheritedSlide && !changedSynergy$horizontal.settled(System.nanoTime(), 0.01)) {
+            callback.setReturnValue(true);
+            return;
+        }
         if (changedSynergy$closing) {
             if (closeKey && changedSynergy$switching && minecraft.player != null) {
                 // A rejected or delayed menu-open packet must not trap the user.
                 changedSynergy$completion = null;
                 changedSynergy$completionRun = true;
-                RadialWheelAnimations.cancelPendingSwitch();
+                RadialWheelAnimations.cancelSwitchAndArrival();
                 minecraft.player.closeContainer();
             }
             callback.setReturnValue(true);
@@ -202,10 +287,6 @@ public abstract class RadialScreenAnimationMixin
                     minecraft.player::closeContainer, false);
             callback.setReturnValue(true);
             return;
-        }
-        if (keyCode >= 49 && keyCode <= 57
-                && (viewTransitionTicksLeft > 0 || changedSynergy$openElapsedMs() < INPUT_DELAY_MS)) {
-            callback.setReturnValue(true);
         }
     }
 
@@ -292,12 +373,24 @@ public abstract class RadialScreenAnimationMixin
         changedSynergy$layerAlpha = visibleAlpha;
         graphics.setColor(1.0F, 1.0F, 1.0F, visibleAlpha);
         float wheelOffset = changedSynergy$getHorizontalOffset();
+        LayerMotion frame = changedSynergy$frameMotion(Math.floorMod(section - viewOffset, 8));
+        float hoverScale = 1 + 0.045F * changedSynergy$preselectionAmount(section - viewOffset);
+        double centerX = screen.width * 0.5 + x * frame.radius() + wheelOffset;
+        double centerY = screen.height * 0.5 + y * frame.radius();
+        // AbilityRenderer applies its own model scale after the GUI pose. Scale its screen plane instead.
+        graphics.flush();
+        var iconView = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
+        iconView.pushPose();
+        iconView.translate(centerX, centerY, 0);
+        iconView.scale(hoverScale, hoverScale, 1);
+        iconView.translate(-centerX, -centerY, 0);
+        com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
         // Native ability models scale GuiGraphics poses; keep alignment in screen pixels.
         screen.renderSectionForeground(
                 graphics,
                 section,
-                x + wheelOffset + RadialWheelAnimations.iconOffset(screen, section, false),
-                y + RadialWheelAnimations.iconOffset(screen, section, true),
+                x * frame.radius() + wheelOffset + RadialWheelAnimations.iconOffset(screen, section, false),
+                y * frame.radius() + RadialWheelAnimations.iconOffset(screen, section, true),
                 partialTick,
                 mouseX,
                 mouseY,
@@ -305,6 +398,9 @@ public abstract class RadialScreenAnimationMixin
                 green,
                 blue,
                 alpha * visibleAlpha);
+        graphics.flush();
+        iconView.popPose();
+        com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
         graphics.setColor(1.0F, 1.0F, 1.0F, 1.0F);
         changedSynergy$layerAlpha = 1.0F;
     }
@@ -350,31 +446,33 @@ public abstract class RadialScreenAnimationMixin
     }
 
     @Override
-    public boolean changedSynergy$startClosing(
-            Runnable completion,
-            boolean wheelSwitch) {
-        if (changedSynergy$closing) {
-            return true;
-        }
+    public boolean changedSynergy$startClosing(Runnable completion, boolean wheelSwitch) {
+        if (changedSynergy$closing) return true;
+        changedSynergy$updateSprings();
         changedSynergy$closing = true;
         changedSynergy$switching = wheelSwitch;
+        changedSynergy$continuousSwitch = wheelSwitch && RadialWheelAnimations.isContinuousPlayerSwitch(changedSynergy$self());
         changedSynergy$completionRun = false;
         changedSynergy$completion = completion;
         changedSynergy$closingAtNanos = System.nanoTime();
-        changedSynergy$closingOpenElapsedMs = Math.min(
-                changedSynergy$openElapsedMs(), FULL_OPEN_DURATION_MS);
-        changedSynergy$reversingOpening = !wheelSwitch
-                && changedSynergy$closingOpenElapsedMs
-                        < FULL_OPEN_DURATION_MS;
-        long normalDuration = wheelSwitch
-                ? SWITCH_DURATION_MS : CLOSE_DURATION_MS;
-        changedSynergy$closingDurationMs = changedSynergy$reversingOpening
-                ? Math.max(40L, Math.round(
-                        normalDuration
-                                * changedSynergy$closingOpenElapsedMs
-                                / (double)FULL_OPEN_DURATION_MS))
-                : normalDuration;
+        if (wheelSwitch) AbilityWheelInput.switchStarted();
+        else if (changedSynergy$self() instanceof AbilityRadialScreen ability) AbilityWheelInput.closing(ability);
+        changedSynergy$updateSprings();
+        if (changedSynergy$continuousSwitch && !(changedSynergy$self() instanceof PlayerRelationshipScreen)) {
+            changedSynergy$completionRun = true;
+            changedSynergy$completion = null;
+            completion.run();
+        }
         return true;
+    }
+
+    @Override
+    public UiSpring changedSynergy$getHorizontalSpring() { return changedSynergy$horizontal; }
+
+    @Override
+    public void changedSynergy$continueSlide(UiSpring horizontal) {
+        changedSynergy$horizontal = horizontal;
+        changedSynergy$inheritedSlide = true;
     }
 
     @Override
@@ -388,121 +486,89 @@ public abstract class RadialScreenAnimationMixin
     }
 
     @Override
+    public boolean changedSynergy$canConfirm() {
+        return !changedSynergy$closing && (UiMotion.reduced() || changedSynergy$paging.settled(System.nanoTime(), 0.01)
+                && (!changedSynergy$inheritedSlide || changedSynergy$horizontal.settled(System.nanoTime(), 0.01)));
+    }
+
+    @Override
     public float changedSynergy$getOverallAlpha() {
-        if (changedSynergy$closing) {
-            if (changedSynergy$reversingOpening) {
-                return changedSynergy$smoothStep(
-                        changedSynergy$reverseOpenElapsedMs() / 180.0F);
-            }
-            long duration = changedSynergy$closingDurationMs;
-            return 1.0F - changedSynergy$smoothStep(
-                    changedSynergy$closeElapsedMs() / (float)duration);
-        }
-        return changedSynergy$smoothStep(
-                changedSynergy$openElapsedMs() / 180.0F);
+        changedSynergy$updateSprings();
+        return UiSpring.clamp(changedSynergy$visibility.value(System.nanoTime()));
+    }
+
+    @Override
+    public float changedSynergy$getFrameHighlight(int slot, boolean selected) {
+        long now = System.nanoTime();
+        var highlight = changedSynergy$highlights[Math.floorMod(slot, 8)];
+        highlight.target(selected ? 1 : 0, now);
+        if (UiMotion.reduced()) highlight.snap(selected ? 1 : 0, now);
+        return UiSpring.clamp(highlight.displayValue(now, 0.001));
+    }
+
+    @Override
+    public float changedSynergy$getPanelAlpha() {
+        float alpha = changedSynergy$getOverallAlpha();
+        return alpha * UiSpring.clamp(changedSynergy$panels.value(System.nanoTime()));
     }
 
     @Override
     public float changedSynergy$getHorizontalOffset() {
-        AbstractRadialScreen<?> screen = changedSynergy$self();
-        float socialOffset = changedSynergy$socialWheelOffset(screen.width);
-        if (changedSynergy$closing && changedSynergy$switching) {
-            float progress = changedSynergy$smoothStep(
-                    changedSynergy$closeElapsedMs()
-                            / (float)changedSynergy$closingDurationMs);
-            if (screen instanceof BondedLatexScreen) {
-                return socialOffset * progress;
-            }
-            if (screen instanceof AbilityRadialScreen) {
-                return socialOffset * progress;
-            }
-            if (screen instanceof PlayerRelationshipScreen) {
-                return socialOffset * (1.0F - progress);
-            }
-            if (screen instanceof SocialInteractionScreen social
-                    && social.menu.isBondedMode()) {
-                return socialOffset * (1.0F - progress);
-            }
-        }
-        return screen instanceof SocialInteractionScreen
-                || screen instanceof PlayerRelationshipScreen
-                ? socialOffset : 0.0F;
+        changedSynergy$updateSprings();
+        return (float)changedSynergy$horizontal.displayValue(System.nanoTime(), 0.01);
     }
 
     @Unique
-    private void changedSynergy$renderAnimatedCenter(
-            GuiGraphics graphics,
-            int x,
-            int y,
-            int scale,
-            float mouseX,
-            float mouseY,
-            LivingEntity entity) {
-        if (changedSynergy$hideCenterEntity(entity)) {
-            return;
-        }
-        float wheelOffset = changedSynergy$getHorizontalOffset();
-        int shiftedX = x + Math.round(wheelOffset);
-        float shiftedMouseX = mouseX + wheelOffset;
-        if ((!changedSynergy$closing && changedSynergy$pairedArrival)
-                || (changedSynergy$closing && changedSynergy$switching)) {
-            changedSynergy$renderCenterContent(
-                    graphics, shiftedX, y, scale,
-                    shiftedMouseX, mouseY, entity);
-            return;
-        }
-        float progress;
-        if (changedSynergy$closing) {
-            if (changedSynergy$reversingOpening) {
-                changedSynergy$renderOpeningCenter(
-                        graphics, shiftedX, y, scale,
-                        shiftedMouseX, mouseY, entity,
-                        changedSynergy$reverseOpenElapsedMs());
-                return;
-            }
-            progress = changedSynergy$clamp(
-                    changedSynergy$closeElapsedMs() / 110.0F);
-            if (progress >= 0.99F) {
-                return;
-            }
-            float eased = progress * progress * progress;
-            int animatedScale = Math.max(1, Math.round(scale * (1.0F - 0.12F * eased)));
-            int animatedY = y + Math.round(8.0F * eased);
-            changedSynergy$renderCenterContent(
-                    graphics, shiftedX, animatedY, animatedScale,
-                    shiftedMouseX, mouseY, entity);
-            return;
-        }
-        changedSynergy$renderOpeningCenter(
-                graphics, shiftedX, y, scale,
-                shiftedMouseX, mouseY, entity,
-                changedSynergy$openElapsedMs());
+    private float changedSynergy$restingOffset() {
+        var screen = changedSynergy$self();
+        return screen instanceof SocialInteractionScreen || screen instanceof PlayerRelationshipScreen
+                ? RadialWheelAnimations.layoutOffset(screen.width) : 0.0F;
     }
 
     @Unique
-    private void changedSynergy$renderOpeningCenter(
-            GuiGraphics graphics,
-            int x,
-            int y,
-            int scale,
-            float mouseX,
-            float mouseY,
-            LivingEntity entity,
-            long openElapsedMs) {
-        float progress = changedSynergy$clamp(
-                (openElapsedMs - 55L) / (float)CENTER_DURATION_MS);
-        if (progress <= 0.0F) {
-            return;
+    private void changedSynergy$updateSprings() {
+        long now = System.nanoTime();
+        boolean reduced = UiMotion.reduced();
+        double elapsed = (now - changedSynergy$openedAtNanos) / 1_000_000_000.0;
+        changedSynergy$visibility.target(changedSynergy$closing && !changedSynergy$continuousSwitch ? 0 : 1, now);
+        changedSynergy$panels.target(changedSynergy$closing && changedSynergy$continuousSwitch ? 0 : 1, now);
+        changedSynergy$center.target(changedSynergy$closing && !changedSynergy$switching ? 0 : 1, now);
+        float offset = changedSynergy$restingOffset();
+        if (changedSynergy$closing && changedSynergy$switching && !reduced)
+            offset = offset == 0 ? RadialWheelAnimations.layoutOffset(changedSynergy$self().width) : 0;
+        changedSynergy$horizontal.target(offset, now);
+        for (int i = 0; i < 8; i++) {
+            double target = changedSynergy$closing && !changedSynergy$switching ? 0
+                    : reduced || changedSynergy$pairedArrival || elapsed >= i * 0.012 ? 1 : 0;
+            changedSynergy$frames[i].target(target, now);
+            double icon = changedSynergy$closing ? 0 : reduced || elapsed >= i * 0.012 + 0.025 ? 1 : 0;
+            changedSynergy$icons[i].target(icon, now);
+            double lift = !changedSynergy$closing && i == changedSynergy$preselectedSlot ? 6 : 0;
+            changedSynergy$preselection[i].target(lift, now);
+            if (reduced) changedSynergy$preselection[i].snap(lift, now);
+            if (reduced) changedSynergy$frames[i].snap(target, now);
         }
-        float eased = changedSynergy$easeOutBack(progress, 1.15F);
-        int animatedScale = Math.max(1, Math.round(
-                scale * (0.78F + 0.22F * eased)));
-        int animatedY = y + Math.round(10.0F
-                * (1.0F - changedSynergy$easeOutCubic(progress)));
-        changedSynergy$renderCenterContent(
-                graphics, x, animatedY, animatedScale,
-                mouseX, mouseY, entity);
+        if (reduced) {
+            changedSynergy$panels.snap(changedSynergy$closing && changedSynergy$continuousSwitch ? 0 : 1, now);
+            changedSynergy$horizontal.snap(offset, now);
+            changedSynergy$center.snap(changedSynergy$closing && !changedSynergy$switching ? 0 : 1, now);
+        }
     }
+
+    @Unique
+    private void changedSynergy$renderAnimatedCenter(GuiGraphics graphics, int x, int y, int scale,
+            float mouseX, float mouseY, LivingEntity entity) {
+        if (changedSynergy$hideCenterEntity(entity)) return;
+        changedSynergy$updateSprings();
+        float value = (float)changedSynergy$center.displayValue(System.nanoTime(), 0.001);
+        if (value <= 0.01F) return;
+        float offset = changedSynergy$getHorizontalOffset();
+        int animatedScale = Math.max(1, Math.round(scale * (UiMotion.reduced() ? 1 : 0.78F + 0.22F * value)));
+        int animatedY = y + (UiMotion.reduced() ? 0 : Math.round(10 * (1 - value)));
+        changedSynergy$renderCenterContent(graphics, x + Math.round(offset), animatedY, animatedScale,
+                mouseX + offset, mouseY, entity);
+    }
+
 
     @Unique
     private void changedSynergy$renderCenterContent(
@@ -583,100 +649,29 @@ public abstract class RadialScreenAnimationMixin
 
     @Unique
     private LayerMotion changedSynergy$frameMotion(int section) {
+        changedSynergy$updateSprings();
         int slot = Math.floorMod(section, 8);
-        if (changedSynergy$closing
-                && changedSynergy$reversingOpening) {
-            return changedSynergy$openingFrameMotion(
-                    slot, changedSynergy$reverseOpenElapsedMs());
-        }
-        if ((!changedSynergy$closing && changedSynergy$pairedArrival)
-                || (changedSynergy$closing && changedSynergy$switching)) {
-            return new LayerMotion(1.0F, 1.0F, 1.0F);
-        }
-        if (changedSynergy$closing) {
-            int reverse = 7 - slot;
-            float progress = changedSynergy$clamp(
-                    (changedSynergy$closeElapsedMs() - 82L - reverse * 6L)
-                            / 112.0F);
-            float eased = progress * progress * progress;
-            float selectedPulse = section == changedSynergy$selectedSection
-                    && changedSynergy$closeElapsedMs() < 45L
-                    ? 0.07F * (float)Math.sin(
-                            Math.PI * changedSynergy$closeElapsedMs() / 45.0D)
-                    : 0.0F;
-            return new LayerMotion(
-                    1.0F - 0.78F * eased,
-                    1.0F - 0.30F * eased + selectedPulse,
-                    1.0F - changedSynergy$smoothStep(progress));
-        }
-        return changedSynergy$openingFrameMotion(
-                slot, changedSynergy$openElapsedMs());
+        long now = System.nanoTime();
+        float value = (float)changedSynergy$frames[slot].displayValue(now, 0.001);
+        float lift = (float)changedSynergy$preselection[slot].displayValue(now, 0.01) / 90.0F;
+        return new LayerMotion((UiMotion.reduced() ? 1 : 0.16F + 0.84F * value) + lift * UiSpring.clamp(value),
+                (UiMotion.reduced() ? 1 : 0.70F + 0.30F * value) * (1 + 0.045F * changedSynergy$preselectionAmount(slot)), UiSpring.clamp(value));
     }
 
     @Unique
-    private LayerMotion changedSynergy$openingFrameMotion(
-            int slot,
-            long openElapsedMs) {
-        float progress = changedSynergy$clamp(
-                (openElapsedMs - slot * SECTION_STAGGER_MS)
-                        / (float)FRAME_DURATION_MS);
-        return new LayerMotion(
-                0.16F + 0.84F * changedSynergy$easeOutCubic(progress),
-                0.70F + 0.30F * changedSynergy$easeOutBack(progress, 1.35F),
-                changedSynergy$smoothStep(progress));
+    private float changedSynergy$preselectionAmount(int section) {
+        return (float)changedSynergy$preselection[Math.floorMod(section, 8)].displayValue(System.nanoTime(), 0.01) / 6.0F;
     }
+
 
     @Unique
     private LayerMotion changedSynergy$iconMotion(int section) {
+        changedSynergy$updateSprings();
         int slot = Math.floorMod(section - viewOffset, 8);
-        if (changedSynergy$closing) {
-            if (changedSynergy$reversingOpening) {
-                return changedSynergy$openingIconMotion(
-                        slot, changedSynergy$reverseOpenElapsedMs());
-            }
-            if (changedSynergy$switching) {
-                float progress = changedSynergy$clamp(
-                        (changedSynergy$closeElapsedMs() - slot * 16L)
-                                / 92.0F);
-                return new LayerMotion(
-                        1.0F,
-                        1.0F,
-                        1.0F - changedSynergy$smoothStep(progress));
-            }
-            int reverse = 7 - slot;
-            float progress = changedSynergy$clamp(
-                    (changedSynergy$closeElapsedMs() - reverse * 6L) / 78.0F);
-            return new LayerMotion(
-                    1.0F,
-                    1.0F,
-                    1.0F - changedSynergy$smoothStep(progress));
-        }
-        return changedSynergy$openingIconMotion(
-                slot, changedSynergy$openElapsedMs());
+        float value = (float)changedSynergy$icons[slot].value(System.nanoTime());
+        return new LayerMotion(1, 1, UiSpring.clamp(value));
     }
 
-    @Unique
-    private LayerMotion changedSynergy$openingIconMotion(
-            int slot,
-            long openElapsedMs) {
-        if (changedSynergy$pairedArrival) {
-            float progress = changedSynergy$clamp(
-                    (openElapsedMs - slot * 18L) / 120.0F);
-            return new LayerMotion(
-                    1.0F,
-                    1.0F,
-                    changedSynergy$smoothStep(progress));
-        }
-        float progress = changedSynergy$clamp(
-                (openElapsedMs
-                        - slot * SECTION_STAGGER_MS
-                        - FRAME_DURATION_MS - 8L)
-                        / (float)ICON_DURATION_MS);
-        return new LayerMotion(
-                1.0F,
-                1.0F,
-                changedSynergy$smoothStep(progress));
-    }
 
     @Unique
     private void changedSynergy$renderTransformed(
@@ -740,28 +735,11 @@ public abstract class RadialScreenAnimationMixin
     }
 
     @Unique
-    private long changedSynergy$openElapsedMs() {
-        return Math.max(0L,
-                (System.nanoTime() - changedSynergy$openedAtNanos) / 1_000_000L);
-    }
-
-    @Unique
     private long changedSynergy$closeElapsedMs() {
         return Math.max(0L,
                 (System.nanoTime() - changedSynergy$closingAtNanos) / 1_000_000L);
     }
 
-    @Unique
-    private long changedSynergy$reverseOpenElapsedMs() {
-        if (changedSynergy$closingDurationMs <= 0L) {
-            return 0L;
-        }
-        float remaining = 1.0F - changedSynergy$clamp(
-                changedSynergy$closeElapsedMs()
-                        / (float)changedSynergy$closingDurationMs);
-        return Math.max(0L, Math.round(
-                changedSynergy$closingOpenElapsedMs * remaining));
-    }
 
     @Unique
     private AbstractRadialScreen<?> changedSynergy$self() {
@@ -773,31 +751,8 @@ public abstract class RadialScreenAnimationMixin
         return Math.max(0.0F, Math.min(1.0F, value));
     }
 
-    @Unique
-    private static float changedSynergy$easeOutCubic(float value) {
-        float inverse = 1.0F - changedSynergy$clamp(value);
-        return 1.0F - inverse * inverse * inverse;
-    }
 
-    @Unique
-    private static float changedSynergy$easeOutBack(float value, float strength) {
-        float shifted = changedSynergy$clamp(value) - 1.0F;
-        return 1.0F + (strength + 1.0F) * shifted * shifted * shifted
-                + strength * shifted * shifted;
-    }
 
-    @Unique
-    private static float changedSynergy$smoothStep(float value) {
-        float clamped = changedSynergy$clamp(value);
-        return clamped * clamped * (3.0F - 2.0F * clamped);
-    }
-
-    @Unique
-    private static float changedSynergy$socialWheelOffset(int screenWidth) {
-        float desired = Math.min(220.0F, screenWidth * 0.22F);
-        float roomAtRight = Math.max(0.0F, screenWidth * 0.5F - 136.0F);
-        return Math.min(desired, roomAtRight);
-    }
 
     @Unique
     private record LayerMotion(float radius, float scale, float alpha) {

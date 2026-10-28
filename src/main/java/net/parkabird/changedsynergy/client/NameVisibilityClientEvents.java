@@ -8,6 +8,11 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.player.Player;
+import net.ltxprogrammer.changed.process.ProcessTransfur;
+import net.parkabird.changedsynergy.ChangedSynergyClientConfig;
+import net.parkabird.changedsynergy.origin.NativeOriginPolicy;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.parkabird.changedsynergy.ChangedSynergyMod;
 
 @Mod.EventBusSubscriber(modid = ChangedSynergyMod.MOD_ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -17,8 +22,18 @@ public final class NameVisibilityClientEvents {
     private NameVisibilityClientEvents() {
     }
 
-    @SubscribeEvent
+    public static boolean hidesNativePlayerName(Entity entity) {
+        Player player = entity instanceof Player direct ? direct
+                : entity instanceof ChangedEntity form ? form.getUnderlyingPlayer() : null;
+        return player != null && !ChangedSynergyClientConfig.CLIENT.showNativePlayerNames.get()
+                && net.minecraftforge.fml.ModList.get().isLoaded("true_transfur")
+                && NativeOriginPolicy.clientNatives.contains(player.getUUID())
+                && ProcessTransfur.isPlayerTransfurred(player);
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onRenderNameTag(RenderNameTagEvent event) {
+        if (hidesNativePlayerName(event.getEntity())) {event.setResult(Result.DENY);return;}
         if (!(event.getEntity() instanceof ChangedEntity mob)) {
             return;
         }

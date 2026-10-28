@@ -1,0 +1,44 @@
+{
+  "parent": "minecraft:block/block",
+  "gui_light": "front",
+  "display": {"gui": {"rotation": [0, 0, 0], "translation": [0, 0, 0], "scale": [1, 1, 1]}},
+  "textures": {
+    "particle": "minecraft:item/string",
+    "silk": "minecraft:item/string",
+    "plus": "changed:abilities/create_cobweb"
+  },
+  "elements": [
+    {
+      "from": [-1, 0, 7.5],
+      "to": [15, 16, 8.5],
+      "faces": {
+        "north": {"uv": [16, 0, 0, 16], "texture": "#silk", "tintindex": 0},
+        "south": {"uv": [0, 0, 16, 16], "texture": "#silk", "tintindex": 0}
+      }
+    },
+    {
+      "from": [10, 3, 7],
+      "to": [15, 4, 9],
+      "faces": {
+        "north": {"uv": [12, 12, 13, 13], "texture": "#plus", "tintindex": 0},
+        "south": {"uv": [12, 12, 13, 13], "texture": "#plus", "tintindex": 0}
+      }
+    },
+    {
+      "from": [12, 4, 7],
+      "to": [13, 6, 9],
+      "faces": {
+        "north": {"uv": [12, 12, 13, 13], "texture": "#plus", "tintindex": 0},
+        "south": {"uv": [12, 12, 13, 13], "texture": "#plus", "tintindex": 0}
+      }
+    },
+    {
+      "from": [12, 1, 7],
+      "to": [13, 3, 9],
+      "faces": {
+        "north": {"uv": [12, 12, 13, 13], "texture": "#plus", "tintindex": 0},
+        "south": {"uv": [12, 12, 13, 13], "texture": "#plus", "tintindex": 0}
+      }
+    }
+  ]
+}

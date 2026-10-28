@@ -1,6 +1,7 @@
 {
   "replace": false,
   "values": [
-    "changed:gas_skunk"
+    "changed:gas_skunk",
+    "changed_synergy:latex_silk_moth"
   ]
 }

@@ -91,12 +91,15 @@ public final class OriginRegression {
                 check(NativeOriginCatalog.entries(level.registryAccess()).equals(catalog), "Unavailable mod IDs are harmless");
             } finally { disabled.set(previousDisabled); ChangedSynergyConfig.SPEC.save(); }
             check(!ChangedSynergyConfig.COMMON.includeModdedOriginSpecies.get()
-                    && catalog.stream().allMatch(entry -> entry.form().getNamespace().equals("changed")), "Modded origins disabled by default");
+                    && catalog.stream().allMatch(entry -> java.util.Set.of("changed", ChangedSynergyMod.MOD_ID)
+                            .contains(entry.form().getNamespace())), "Third-party origins disabled by default");
+            check(catalog.stream().anyMatch(entry -> entry.form().toString().equals("changed_synergy:form_latex_silk_moth")),
+                    "Synergy's own silk moth is available by default");
             try {
                 ChangedSynergyConfig.COMMON.includeModdedOriginSpecies.set(true);
                 var expanded = NativeOriginCatalog.entries(level.registryAccess());
-                check(expanded.stream().anyMatch(entry -> !entry.form().getNamespace().equals("changed")), "Enabling option includes actual Addon playable forms");
-                var modded = expanded.stream().filter(form -> !form.form().getNamespace().equals("changed")).findFirst().orElseThrow();
+                check(expanded.stream().anyMatch(entry -> entry.form().getNamespace().equals("changed_addon")), "Enabling option includes actual Addon playable forms");
+                var modded = expanded.stream().filter(form -> form.form().getNamespace().equals("changed_addon")).findFirst().orElseThrow();
                 disabled.set(java.util.List.of(modded.form().toString()));
                 check(NativeOriginCatalog.find(level.registryAccess(), modded.form()) == null, "Denylist also excludes other mods' forms");
                 disabled.set(previousDisabled);

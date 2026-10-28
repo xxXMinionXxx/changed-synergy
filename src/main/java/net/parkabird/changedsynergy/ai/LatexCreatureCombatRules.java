@@ -18,6 +18,8 @@ import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.npc.AbstractVillager;
+import net.minecraft.world.entity.npc.Villager;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.tags.TagKey;
 import net.parkabird.changedsynergy.ChangedSynergyConfig;
 import net.parkabird.changedsynergy.compat.TrueTransfurCompat;
@@ -47,6 +49,7 @@ public final class LatexCreatureCombatRules {
 
     /** Identity only: this grants neither compatriot status nor personal friendship. */
     public static boolean arePeacefulCompetitors(ChangedEntity first, ChangedEntity second) {
+        if (!ChangedSynergyConfig.COMMON.peacefulDarkWhiteRelations.get()) return false;
         boolean firstPlayer = first.getUnderlyingPlayer() != null || TrueTransfurCompat.isInstinctBody(first);
         boolean secondPlayer = second.getUnderlyingPlayer() != null || TrueTransfurCompat.isInstinctBody(second);
         return first != second
@@ -57,10 +60,11 @@ public final class LatexCreatureCombatRules {
     }
 
     public static boolean arePeacefulCompetitors(ChangedEntity creature, ServerPlayer player) {
-        return DarkLatexDisguise.appearsAsDarkToWhite(creature, player)
+        return ChangedSynergyConfig.COMMON.peacefulDarkWhiteRelations.get()
+                && (DarkLatexDisguise.appearsAsDarkToWhite(creature, player)
                 || ProcessTransfur.getPlayerTransfurVariantSafe(player)
                         .map(form -> arePeacefulCompetitors(creature, form.getChangedEntity()))
-                        .orElse(false);
+                        .orElse(false));
     }
 
     /** True only for an actual hostile latex pairing, not diplomatic competition. */
@@ -171,8 +175,24 @@ public final class LatexCreatureCombatRules {
         if (!ChangedSynergyConfig.COMMON.peacefulVillageRelations.get()) {
             return false;
         }
-        return attacker instanceof ChangedEntity && isVillageEntity(target)
-                || target instanceof ChangedEntity && isVillageEntity(attacker);
+        if (attacker instanceof ChangedEntity && isVillageEntity(target)) return true;
+        if (!isVillageEntity(attacker)) return false;
+        Player player = target instanceof Player direct ? direct
+                : target instanceof ChangedEntity body ? TrueTransfurCompat.bodyOwner(body) : null;
+        if (player != null && (target instanceof ChangedEntity || ProcessTransfur.isPlayerTransfurred(player)))
+            return !hasVillageGrievance(attacker, target, player);
+        return target instanceof ChangedEntity;
+    }
+
+    private static boolean hasVillageGrievance(Mob village, LivingEntity body, Player player) {
+        if (village.getLastHurtByMob() == body || village.getLastHurtByMob() == player) return true;
+        if (!(village instanceof IronGolem golem)) return false;
+        UUID anger = golem.getPersistentAngerTarget();
+        if (golem.getRemainingPersistentAngerTime() > 0
+                && (player.getUUID().equals(anger) || body.getUUID().equals(anger))) return true;
+        // Retain vanilla village defence after removing Changed's species-only reputation penalty.
+        return village.level().getEntitiesOfClass(Villager.class, village.getBoundingBox().inflate(10, 8, 10))
+                .stream().anyMatch(villager -> villager.getPlayerReputation(player) <= -100);
     }
 
     public static boolean isVillageEntity(LivingEntity entity) {

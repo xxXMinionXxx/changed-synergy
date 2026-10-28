@@ -11,7 +11,6 @@ import javax.annotation.Nullable;
 import net.ltxprogrammer.changed.entity.ChangedEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
@@ -20,7 +19,7 @@ import net.parkabird.changedsynergy.dialogue.NpcDialogue;
 import net.parkabird.changedsynergy.dialogue.NpcDialogue.Cue;
 import net.parkabird.changedsynergy.init.ChangedSynergyGameRules;
 
-/** Reputation-gated, temporary defence of a real community cache. */
+/** Witness reactions and temporary defence of a real community cache. */
 public final class CreatureCacheGuardService {
     private static final String PLAYER_COOLDOWNS =
             "ChangedSynergyCacheAccessCooldowns";
@@ -39,33 +38,24 @@ public final class CreatureCacheGuardService {
     private CreatureCacheGuardService() {
     }
 
-    public static boolean handleCacheAccess(
+    public static void handleCacheAccess(
             ServerLevel level,
             ServerPlayer player,
             BlockPos position) {
         if (player.isCreative() || player.isSpectator()
                 || !ChangedSynergyGameRules.enabled(
                         level, ChangedSynergyGameRules.FACTION_REPUTATION)) {
-            return true;
+            return;
         }
         Optional<CreatureCommunityData.Snapshot> community =
                 CreatureCommunityData.snapshotAtCache(level, position);
         if (community.isEmpty()) {
-            return true;
+            return;
         }
+        position = community.get().cache().orElse(position);
         List<ChangedEntity> members = membersAtCache(level, player, position);
         if (members.isEmpty()) {
-            FactionReputation.Standing standing =
-                    FactionReputation.Standing.forScore(
-                            FactionReputation.scoreAt(
-                                    community.get().faction(), player,
-                                    level, position));
-            if (standing == FactionReputation.Standing.ALLIED) {
-                return true;
-            }
-            player.displayClientMessage(Component.translatable(
-                    "message.changed_synergy.cache.trade_required"), true);
-            return false;
+            return;
         }
         ChangedEntity witness = members.get(0);
         FactionReputation.Standing standing =
@@ -74,31 +64,30 @@ public final class CreatureCacheGuardService {
             if (recordAccess(witness, player, level.getGameTime()) == 1) {
                 NpcDialogue.trigger(witness, player, Cue.CACHE_ALLIED_ACCESS);
             }
-            return true;
+            return;
         }
         if (standing == FactionReputation.Standing.RESPECTED) {
             int accessCount = recordAccess(
                     witness, player, level.getGameTime());
             if (accessCount == 1) {
                 NpcDialogue.trigger(witness, player, Cue.CACHE_TOLERATED);
-                return false;
+                return;
             }
             if (accessCount == TOLERATED_ACCESS_COUNT) {
                 NpcDialogue.trigger(witness, player, Cue.CACHE_FINAL_WARNING);
-                return false;
+                return;
             }
             if (accessCount == TOLERATED_ACCESS_COUNT + 1) {
                 NpcDialogue.trigger(witness, player, Cue.CACHE_OVERUSED);
                 applyReputationCost(witness, player, level.getGameTime(), -1);
             }
             attackIntruder(members, witness, player, position);
-            return false;
+            return;
         }
 
         applyReputationCost(witness, player, level.getGameTime(), -2);
         NpcDialogue.trigger(witness, player, Cue.CACHE_INTRUSION);
         attackIntruder(members, witness, player, position);
-        return false;
     }
 
     /** Breaking a community cache is an immediate offence at every standing. */
@@ -109,6 +98,8 @@ public final class CreatureCacheGuardService {
         if (player.isCreative() || player.isSpectator()) {
             return;
         }
+        position = CreatureCommunityData.snapshotAtCache(level, position)
+                .flatMap(CreatureCommunityData.Snapshot::cache).orElse(position);
         List<ChangedEntity> members = membersAtCache(level, player, position);
         if (members.isEmpty()) {
             return;
@@ -139,7 +130,7 @@ public final class CreatureCacheGuardService {
                                 && !creature.isNoAi()
                                 && LatexSocialMemory.isSocialLatex(creature)
                                 && !CreatureCommunityData.isPlayerCompanion(creature)
-                                && !PlayerOutpostService.assigned(creature)
+                                && !PlayerOutpostService.hasAssignment(creature)
                                 && (CreatureSettlementService.cachePosition(creature)
                                                 .filter(position::equals).isPresent()
                                         || CreatureLifeMemory.role(creature)
@@ -165,13 +156,14 @@ public final class CreatureCacheGuardService {
                 .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
         if (guards.isEmpty() && stationed.size() < MAX_GUARDS_PER_CACHE) {
             members.stream()
+                    .filter(member -> CreatureLifeMemory.role(member) != GroupRole.WANDERER)
                     .filter(member -> CreatureLifeMemory.role(member)
                             != GroupRole.YOUNGSTER)
                     .filter(member -> CreatureLifeMemory.role(member)
                             != GroupRole.GUARD)
                     .filter(member -> assignment(member).isEmpty())
                     .filter(member -> !CreatureCommunityData.isPlayerCompanion(member))
-                    .filter(member -> !PlayerOutpostService.assigned(member))
+                    .filter(member -> !PlayerOutpostService.hasAssignment(member))
                     .min(Comparator.comparingDouble(player::distanceToSqr))
                     .ifPresent(member -> {
                         CreatureLifeMemory.setRole(member, GroupRole.GUARD);
@@ -191,7 +183,7 @@ public final class CreatureCacheGuardService {
             BlockPos cache) {
         if (!(member.level() instanceof ServerLevel level)
                 || CreatureCommunityData.isPlayerCompanion(member)
-                || PlayerOutpostService.assigned(member)) {
+                || PlayerOutpostService.hasAssignment(member)) {
             return;
         }
         if (!stationedGuards(level, cache).isEmpty()) {
@@ -205,8 +197,9 @@ public final class CreatureCacheGuardService {
                         && LatexSocialMemory.isSocialLatex(candidate)
                         && CreatureCommunityData.sameCommunity(member, candidate)
                         && CreatureLifeMemory.role(candidate) != GroupRole.YOUNGSTER
+                        && CreatureLifeMemory.role(candidate) != GroupRole.WANDERER
                         && !CreatureCommunityData.isPlayerCompanion(candidate)
-                        && !PlayerOutpostService.assigned(candidate));
+                        && !PlayerOutpostService.hasAssignment(candidate));
         peers.stream()
                 .filter(candidate ->
                         CreatureLifeMemory.role(candidate) != GroupRole.GUARD)
@@ -243,7 +236,7 @@ public final class CreatureCacheGuardService {
             return Optional.empty();
         }
         if (CreatureCommunityData.isPlayerCompanion(guard)
-                || PlayerOutpostService.assigned(guard)) {
+                || PlayerOutpostService.hasAssignment(guard)) {
             finish(guard, false);
             return Optional.empty();
         }
@@ -283,7 +276,7 @@ public final class CreatureCacheGuardService {
                 && CreatureLifeMemory.role(guard) == GroupRole.GUARD
                 && LatexSocialMemory.isSocialLatex(guard)
                 && !CreatureCommunityData.isPlayerCompanion(guard)
-                && !PlayerOutpostService.assigned(guard);
+                && !PlayerOutpostService.hasAssignment(guard);
     }
 
     public static void begin(
@@ -291,7 +284,7 @@ public final class CreatureCacheGuardService {
             ServerPlayer intruder,
             BlockPos cache) {
         if (CreatureCommunityData.isPlayerCompanion(guard)
-                || PlayerOutpostService.assigned(guard)) return;
+                || PlayerOutpostService.hasAssignment(guard)) return;
         BlockPos current = guard.blockPosition();
         BlockPos returnPost = current.distSqr(cache) <= 14.0D * 14.0D
                 ? current.immutable() : cache.immutable();

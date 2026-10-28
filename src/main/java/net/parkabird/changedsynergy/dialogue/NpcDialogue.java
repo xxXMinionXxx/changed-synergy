@@ -17,6 +17,7 @@ import net.parkabird.changedsynergy.ChangedSynergyConfig;
 import net.parkabird.changedsynergy.ai.HunterArchetype;
 import net.parkabird.changedsynergy.ai.HunterFaction;
 import net.parkabird.changedsynergy.ai.HypnosisProfile;
+import net.parkabird.changedsynergy.ai.HypnosisQteService;
 import net.parkabird.changedsynergy.ai.HumanIntent;
 import net.parkabird.changedsynergy.ai.InvoluntaryTransfurNegotiation;
 import net.parkabird.changedsynergy.ai.LatexSocialMemory;
@@ -62,6 +63,7 @@ public final class NpcDialogue {
     private static final Set<String> AVAILABLE_LINES = loadAvailableLines();
     private static final TagKey<EntityType<?>> SILENT_HUNTERS = tag("silent_hunters");
     private static final TagKey<EntityType<?>> EMOTELESS_HUNTERS = tag("emoteless_hunters");
+    private static final TagKey<EntityType<?>> DIRECT_SPEAKERS = tag("direct_speakers");
 
     private NpcDialogue() {
     }
@@ -127,6 +129,7 @@ public final class NpcDialogue {
                 || !speaker.isAlive()
                 || !CreatureSocialProfile.allowsDialogue(speaker)
                 || TakeoverService.active(focus) && !isTakeoverCue(cue)
+                || !cue.important && net.parkabird.changedsynergy.ai.BondedSuitService.getSuitController(speaker) != null
                 || dialogueSuppressed(speaker, level)) {
             return false;
         }
@@ -235,7 +238,9 @@ public final class NpcDialogue {
             }
 
             boolean understands = (TelepathyService.enabled() && (isTakeoverCue(cue)
-                    || cue == Cue.BOND_REVERSE_UNSAFE) && listener == focus)
+                    || cue == Cue.BOND_REVERSE_UNSAFE
+                    // Result lines are sent after the hypnosis session is removed.
+                    || isHypnosisCue(cue) && cue != Cue.HYPNOSIS_WELCOME) && listener == focus)
                     || canUnderstand(speaker, listener);
             String visibleKey = understands
                     ? personalityKey != null ? personalityKey : lineKey
@@ -416,8 +421,13 @@ public final class NpcDialogue {
     }
 
     public static boolean canUnderstand(ChangedEntity speaker, ServerPlayer player) {
-        // This speaker can communicate directly; do not unlock the listener's telepathy.
-        if (TelepathyService.enabled() && (HypnosisProfile.isHypnoticCreature(speaker)
+        // Spoken language does not require or unlock the listener's telepathy.
+        if (speaker.getType().is(DIRECT_SPEAKERS)) return true;
+        boolean hypnoticSpeech = HypnosisProfile.isHypnoticCreature(speaker)
+                && (HypnosisProfile.of(speaker) != HypnosisProfile.HYPNO_CAT
+                    || HypnosisQteService.isHypnotizing(speaker.getUnderlyingPlayer() == null
+                            ? speaker : speaker.getUnderlyingPlayer(), player));
+        if (TelepathyService.enabled() && (hypnoticSpeech
                 || ProcessTransfur.isPlayerTransfurred(player)
                 || TelepathyService.canUnderstand(player))) {
             return true;
@@ -475,6 +485,13 @@ public final class NpcDialogue {
                 return "dialogue.changed_synergy.native." + HunterFaction.of(speaker).id() + ".greeting." + index;
         }
         String cueName = cue.name().toLowerCase(Locale.ROOT);
+        if (cue == Cue.TAKEOVER_SURRENDER) return "dialogue.changed_synergy.surrender.start." + index;
+        if (cueName.startsWith("takeover_surrender_")) return "dialogue.changed_synergy.surrender."
+                + cueName.substring("takeover_surrender_".length()) + "." + index;
+        if (cueName.startsWith("chase_play_")) return "dialogue.changed_synergy.play."
+                + cueName.substring("chase_play_".length()) + "." + index;
+        if (cueName.startsWith("bond_kin_")) return "dialogue.changed_synergy.bond_kin."
+                + cueName.substring("bond_kin_".length()) + "." + index;
         if (cue == Cue.FUSION_APPROACH || cue == Cue.FUSION_COMPLETE) {
             return "dialogue.changed_synergy.fusion."
                     + LatexFusionIntent.reasonFor(speaker).name()
@@ -578,6 +595,7 @@ public final class NpcDialogue {
     private static boolean isPrivateInteractionCue(Cue cue) {
         String name = cue.name();
         return name.startsWith("PAT_")
+                || name.startsWith("CHASE_PLAY_")
                 || name.startsWith("SOCIAL_")
                 || name.startsWith("RELATIONSHIP_")
                 || name.startsWith("NEGOTIATION_")
@@ -616,6 +634,8 @@ public final class NpcDialogue {
     }
 
     private static boolean isTakeoverCue(Cue cue) {
+        if (cue.name().startsWith("TAKEOVER_SURRENDER")) return true;
+        if (cue.name().startsWith("BOND_KIN_CONFINEMENT_")) return true;
         return switch (cue) {
             case TAKEOVER_PROACTIVE_START, TAKEOVER_REACTIVE_START,
                     TAKEOVER_PROACTIVE_AMBIENT, TAKEOVER_REACTIVE_AMBIENT,
@@ -772,6 +792,7 @@ public final class NpcDialogue {
                     SOCIAL_PLAY_HUG_RELEASE_FRIEND,
                     SOCIAL_REST,
                     VOLUNTARY_BOND_CONFIRM, VOLUNTARY_BOND_COMPLETE,
+                    VOLUNTARY_TRANSFUR_CONFIRM, VOLUNTARY_TRANSFUR_COMPLETE,
                     SOCIAL_FOLLOW, SOCIAL_WAIT, SOCIAL_GOODBYE,
                     SOCIAL_TALK_HURT, SOCIAL_TALK_PLAYER_HURT,
                     SOCIAL_TALK_RAIN, SOCIAL_TALK_NIGHT,
@@ -814,15 +835,11 @@ public final class NpcDialogue {
         }
         Object[] addressed = new Object[lineArguments.length + 2];
         String addressKey;
-        if (LatexSocialMemory.isPetOwner(speaker, focus)
-                && LatexSocialMemory.usesNativePetMenu(speaker)) {
-            addressKey = "address.changed_synergy.master";
-        } else if (LatexSocialMemory.isBonded(speaker, focus)) {
+        if (LatexSocialMemory.isBonded(speaker, focus)
+                || LatexSocialMemory.isPetOwner(speaker, focus)) {
             addressKey = HunterFaction.of(speaker) == HunterFaction.DARK
                     ? "address.changed_synergy.dark_partner"
                     : "address.changed_synergy.partner";
-        } else if (LatexSocialMemory.isPetOwner(speaker, focus)) {
-            addressKey = "address.changed_synergy.master";
         } else {
             addressKey = "address.changed_synergy.friend";
         }
@@ -1293,6 +1310,7 @@ public final class NpcDialogue {
                     SOCIAL_PLAY_HUG_RELEASE_FRIEND,
                     SOCIAL_REST,
                     VOLUNTARY_BOND_CONFIRM, VOLUNTARY_BOND_COMPLETE,
+                    VOLUNTARY_TRANSFUR_CONFIRM, VOLUNTARY_TRANSFUR_COMPLETE,
                     SOCIAL_GIFT_UNSUITABLE,
                     ROLE_PROVISIONER_GIFT_RESPECTED,
                     ROLE_PROVISIONER_GIFT_ALLIED,
@@ -1413,6 +1431,10 @@ public final class NpcDialogue {
     }
 
     public enum Cue {
+        TAKEOVER_SURRENDER(Emote.STARTLED, 1.0, true, 2, true),
+        TAKEOVER_SURRENDER_PUNITIVE(Emote.CONFUSED, 1.0, true, 2, true),
+        TAKEOVER_SURRENDER_FAREWELL(Emote.NERVOUS, 1.0, true, 2, true),
+        TAKEOVER_SURRENDER_PUNITIVE_FAREWELL(Emote.PAUSE, 1.0, true, 2, true),
         TAKEOVER_PROACTIVE_START(Emote.CASUAL, 1.0, true, 3, true),
         TAKEOVER_REACTIVE_START(Emote.DENY, 1.0, true, 3, true),
         TAKEOVER_PROACTIVE_AMBIENT(Emote.CASUAL, 1.0, true, 3, true),
@@ -1503,6 +1525,9 @@ public final class NpcDialogue {
         BOND_WELCOME_ABSORB(Emote.CASUAL, 1.0, true, 2),
         VOLUNTARY_BOND_CONFIRM(Emote.CONFUSED, 1.0, true, 2, true),
         VOLUNTARY_BOND_COMPLETE(Emote.HEART, 1.0, true, 2, true),
+        VOLUNTARY_TRANSFUR_CONFIRM(Emote.CONFUSED, 1.0, true, 2, true),
+        VOLUNTARY_TRANSFUR_COMPLETE(Emote.HEART, 1.0, true, 2, true),
+        TAKEOVER_TOTEM_REVERSED(Emote.ANGRY, 1.0, true, 2, true),
         REPUTATION_HOSTILE(Emote.ANGRY, 1.2, false, 2),
         REPUTATION_DISTRUSTED(Emote.DENY, 1.1, false, 2),
         REPUTATION_RECOGNIZED(Emote.CASUAL, 1.15, false, 2),
@@ -1672,6 +1697,31 @@ public final class NpcDialogue {
         SOCIAL_GIFT_REFUSED(Emote.DENY, 1.0, true, 2, true),
         SOCIAL_GIFT_UNSUITABLE(Emote.CONFUSED, 1.0, true, 2, true),
         SOCIAL_PLAY(Emote.IDEA, 1.0, true, 3, true),
+        CHASE_PLAY_INVITE(Emote.IDEA, 1.0, true, 1, true),
+        CHASE_PLAY_START(Emote.HEART, 1.0, true, 1, true),
+        CHASE_PLAY_CAUGHT(Emote.HEART, 1.0, true, 1, true),
+        CHASE_PLAY_MISSED(Emote.NERVOUS, 1.0, true, 1, true),
+        CHASE_PLAY_COMFORT(Emote.CASUAL, 1.0, true, 1, true),
+        CHASE_PLAY_FALSE_START(Emote.DENY, 1.0, true, 1, true),
+        CHASE_PLAY_ENDED(Emote.CASUAL, 1.0, true, 1, true),
+        CHASE_PLAY_MONSTER(Emote.STARTLED, 1.0, true, 1, true),
+        CHASE_PLAY_UNAVAILABLE(Emote.DENY, 1.0, true, 1, true),
+        BOND_KIN_KILL_WARNING(Emote.DENY, 1.0, true, 1, true),
+        BOND_KIN_KILL_LIMIT(Emote.ANGRY, 1.0, true, 1, true),
+        BOND_KIN_EVACUATION_START(Emote.DENY, 1.0, true, 1, true),
+        BOND_KIN_EVACUATION_END(Emote.CASUAL, 1.0, true, 1, true),
+        BOND_KIN_CONFINEMENT_START_PROTECTIVE(Emote.NERVOUS, 1.0, true, 1, true),
+        BOND_KIN_CONFINEMENT_START_CALM(Emote.DENY, 1.0, true, 1, true),
+        BOND_KIN_CONFINEMENT_START_FIRM(Emote.ANGRY, 1.0, true, 1, true),
+        BOND_KIN_CONFINEMENT_BORROW(Emote.CASUAL, 1.0, true, 1, true),
+        BOND_KIN_CONFINEMENT_STRUGGLE(Emote.DENY, 1.0, true, 1, true),
+        BOND_KIN_CONFINEMENT_SLEEP(Emote.CASUAL, 1.0, true, 1, true),
+        BOND_KIN_CONFINEMENT_RETURNED(Emote.DENY, 1.0, true, 1, true),
+        BOND_KIN_CONFINEMENT_REFUSE(Emote.DENY, 1.0, true, 1, true),
+        BOND_KIN_CONFINEMENT_AMBIENT(Emote.NERVOUS, 1.0, true, 1, true),
+        BOND_KIN_CONFINEMENT_END(Emote.CASUAL, 1.0, true, 1, true),
+        BOND_KIN_CONFINEMENT_TIMEOUT(Emote.CASUAL, 1.0, true, 1, true),
+        BOND_KIN_CONFINEMENT_NEGOTIATION_FAILED(Emote.DENY, 1.0, true, 1, true),
         SOCIAL_PLAY_HUG_BONDED(Emote.HEART, 1.0, true, 2, true),
         SOCIAL_PLAY_HUG_FRIEND(Emote.HEART, 1.0, true, 2, true),
         SOCIAL_PLAY_HUG_RELEASE_BONDED(Emote.CASUAL, 1.0, true, 2, true),

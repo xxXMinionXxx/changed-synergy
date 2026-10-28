@@ -39,6 +39,7 @@ public final class SocialAudienceGoal extends Goal {
     }
 
     public static void begin(ChangedEntity mob, ServerPlayer player) {
+        CreaturePeerInteractionService.cancel(mob);
         if (mob.level() == player.level() && mob.isAlive()) {
             Audience previous = validAudience(mob);
             boolean newlyStarted = previous == null
@@ -64,6 +65,7 @@ public final class SocialAudienceGoal extends Goal {
 
     /** Short, interruptible responses to deliberate group commands share the existing MOVE goal. */
     public static boolean beginResponse(ChangedEntity mob, ServerPlayer player, Emote emote, long ticks, boolean approach) {
+        CreaturePeerInteractionService.cancel(mob);
         if (!hasVisibleBody(mob, player) || mob.level() != player.level() || !mob.isAlive() || mob.isSleeping() || mob.isNoAi()
                 || mob.isPassenger() || mob.isLeashed() || mob.getTarget() != null
                 || ChangedAddonCompat.isGrabberBusy(mob) || HypnosisQteService.getActiveVictim(mob) != null

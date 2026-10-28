@@ -43,6 +43,7 @@
     "changed:latex_mimic_plant",
     "changed:latex_ming_cat",
     "changed:latex_moth",
+    "changed_synergy:latex_silk_moth",
     "changed:latex_mutant_bloodcell_wolf",
     "changed:latex_orca",
     "changed:latex_otter",
@@ -82,7 +83,10 @@
     "changed:white_latex_knight",
     "changed:white_latex_knight_fusion",
     "changed:white_latex_wolf_female",
-    "changed:white_latex_wolf_male"
+    "changed:white_latex_wolf_male",
+    "changed_synergy:latex_swordfish",
+    "changed_synergy:latex_muntjac",
+    "changed_synergy:latex_muntjac_female"
   ],
   "slots": [
     "dog_tag",

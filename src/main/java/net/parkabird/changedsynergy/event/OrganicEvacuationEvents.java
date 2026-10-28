@@ -19,9 +19,12 @@ public final class OrganicEvacuationEvents {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onEvacuatedOwnerHurt(LivingHurtEvent event) {
+        ServerPlayer owner = event.getEntity() instanceof ServerPlayer direct ? direct
+                : event.getEntity() instanceof ChangedEntity body
+                    ? net.parkabird.changedsynergy.compat.TrueTransfurCompat.bodyOwner(body) : null;
         if (event.isCanceled()
                 || event.getAmount() <= 0.0F
-                || !(event.getEntity() instanceof ServerPlayer owner)
+                || owner == null
                 || owner.level().isClientSide
                 || event.getSource().getEntity() == null) {
             return;

@@ -13,13 +13,20 @@ public record GrabQteSyncPacket(
         int grabbedId,
         int currentKey,
         int lastKey,
-        int ticksUnpressed) {
+        int ticksUnpressed,
+        long escapeSeed,
+        int escapeDraws) {
+    public GrabQteSyncPacket(int grabberId, int grabbedId, int currentKey, int lastKey, int ticksUnpressed) {
+        this(grabberId, grabbedId, currentKey, lastKey, ticksUnpressed, 0L, 0);
+    }
     public static void encode(GrabQteSyncPacket packet, FriendlyByteBuf buffer) {
         buffer.writeVarInt(packet.grabberId);
         buffer.writeVarInt(packet.grabbedId);
         buffer.writeVarInt(packet.currentKey + 1);
         buffer.writeVarInt(packet.lastKey + 1);
         buffer.writeVarInt(packet.ticksUnpressed);
+        buffer.writeLong(packet.escapeSeed);
+        buffer.writeVarInt(packet.escapeDraws);
     }
 
     public static GrabQteSyncPacket decode(FriendlyByteBuf buffer) {
@@ -28,6 +35,8 @@ public record GrabQteSyncPacket(
                 buffer.readVarInt(),
                 buffer.readVarInt() - 1,
                 buffer.readVarInt() - 1,
+                buffer.readVarInt(),
+                buffer.readLong(),
                 buffer.readVarInt());
     }
 

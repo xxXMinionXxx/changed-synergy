@@ -7,7 +7,11 @@ gradle.beforeProject { project ->
         def classes = project.file('.codex-tmp/negotiation-lifecycle-build/classes/java/main')
         project.sourceSets.main.java.destinationDirectory.set(classes)
         project.sourceSets.main.output.classesDirs = project.files(classes)
-        project.tasks.named('compileJava').configure { destinationDirectory.set(classes) }
+        project.tasks.named('compileJava').configure {
+            destinationDirectory.set(classes)
+            source project.file('tools/tests/companion-protection/net/parkabird/changedsynergy/regression/PeacefulCompetitionChecks.java')
+            source project.file('tools/tests/companion-protection/net/parkabird/changedsynergy/regression/NativeRescueRegression.java')
+        }
         if (project.hasProperty('trueTransfurJar')) {
             def localMods = project.file('.codex-tmp/camp-work-localmods')
             project.repositories.flatDir { dirs localMods }

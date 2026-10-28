@@ -12,6 +12,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
 import net.parkabird.changedsynergy.ai.CreatureSocialProfile;
 import net.parkabird.changedsynergy.ChangedSynergyConfig;
+import net.parkabird.changedsynergy.ChangedSynergyMod;
 import net.parkabird.changedsynergy.ai.HunterFaction;
 import net.parkabird.changedsynergy.ai.LightFactionGroup;
 
@@ -36,7 +37,9 @@ public final class NativeOriginCatalog {
         ResourceLocation entityId = net.minecraftforge.registries.ForgeRegistries.ENTITY_TYPES.getKey(variant.getEntityType());
         if (entityId == null) return false;
         boolean original = "changed".equals(variant.getFormId().getNamespace()) && "changed".equals(entityId.getNamespace());
-        return (original || ChangedSynergyConfig.COMMON.includeModdedOriginSpecies.get())
+        boolean synergy = ChangedSynergyMod.MOD_ID.equals(variant.getFormId().getNamespace())
+                && ChangedSynergyMod.MOD_ID.equals(entityId.getNamespace());
+        return (original || synergy || ChangedSynergyConfig.COMMON.includeModdedOriginSpecies.get())
                 && (!path.contains("partial") || Set.of("changed:form_dark_latex_wolf_partial",
                         "changed_addon:form_latex_snow_leopard_partial").contains(variant.getFormId().toString()))
                 && !path.contains("custom")

@@ -173,6 +173,7 @@ public final class CentaurMountService {
         player.closeContainer();
         player.setYRot(centaur.getYRot());
         player.setXRot(centaur.getXRot());
+        player.setShiftKeyDown(false);
         boolean mounted = player.startRiding(centaur, true);
         if (mounted) {
             centaur.level().playSound(

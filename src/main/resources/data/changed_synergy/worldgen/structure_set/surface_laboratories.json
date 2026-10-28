@@ -1,0 +1,26 @@
+{
+  "structures": [
+    {
+      "structure": "changed_synergy:white_lab_tower",
+      "weight": 1
+    },
+    {
+      "structure": "changed_synergy:red_lab_tower",
+      "weight": 1
+    },
+    {
+      "structure": "changed_synergy:green_lab",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "spacing": 40,
+    "separation": 12,
+    "salt": 192610250,
+    "exclusion_zone": {
+      "other_set": "changed:decayed_labs",
+      "chunk_count": 6
+    }
+  }
+}

@@ -62,6 +62,7 @@ public final class BondCommand {
 
     private static LiteralArgumentBuilder<CommandSourceStack> bondCommand() {
         return Commands.literal("bond")
+                .then(BondReviveCommand.create())
                 .then(Commands.literal("token")
                         .then(Commands.literal("withdraw").requires(source -> source.getEntity() instanceof ServerPlayer)
                                 .then(Commands.argument("creature", UuidArgument.uuid())
@@ -192,6 +193,8 @@ public final class BondCommand {
         sendHelpLine(source, "command.changed_synergy.help.routine",
                 "/changedsynergy routine inspect ");
         if (source.hasPermission(2)) {
+            sendHelpLine(source, "command.changed_synergy.help.bond_revive",
+                    "/changedsynergy bond revive");
             sendHelpLine(source, "command.changed_synergy.help.relationship_debug",
                     "/changedsynergy relationship help");
             sendHelpLine(source, "command.changed_synergy.help.token_cancel",
@@ -333,7 +336,7 @@ public final class BondCommand {
         source.sendSuccess(() -> Component.translatable(
                 "command.changed_synergy.routine.role_set",
                 creature.getDisplayName(),
-                Component.translatable("routine.changed_synergy.role." + role.id())),
+                Component.translatable("routine.changed_synergy.role." + CreatureLifeMemory.role(creature).id())),
                 true);
         return 1;
     }

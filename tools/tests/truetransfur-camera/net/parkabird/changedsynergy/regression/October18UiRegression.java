@@ -13,6 +13,7 @@ import net.parkabird.changedsynergy.world.inventory.PlayerRelationshipMenu;
 
 final class October18UiRegression {
     static void run(Minecraft mc) throws Exception {
+        untranslatedVocalizations(mc);
         var directory = mc.gameDirectory.toPath().resolve("screenshots"); java.nio.file.Files.createDirectories(directory);
         var projection = new org.joml.Matrix4f(RenderSystem.getProjectionMatrix());
         var sorting = RenderSystem.getVertexSorting(); var model = RenderSystem.getModelViewStack();
@@ -48,7 +49,7 @@ final class October18UiRegression {
                         try(var image=net.minecraft.client.Screenshot.takeScreenshot(target)){image.writeToFile(directory.resolve(name+scale+".png"));}
                     }
                     GrabQteOverlayRenderer.endTakeover();
-                    TakeoverClientState.receive(new TakeoverStatePacket(id,0,0,-1,mc.player.getId(),100,100,1,false,false,true,0,0,1,0,12,0,"Carrier"));
+                    TakeoverClientState.receive(new TakeoverStatePacket(id,0,0,-1,mc.player.getId(),100,100,1,false,false,true,0,0,1,0,12,0,"Carrier", false, 0));
                     var takeover=new TakeoverScreen(); takeover.init(mc,width,height);
                     for(int section=0;section<takeover.getCount();section++)
                         for(var text:takeover.tooltipsFor(section)) if(text.getString().contains("takeover.changed_synergy."))
@@ -79,6 +80,11 @@ final class October18UiRegression {
             HeldCreatureClientRegression.run(mc,directory);
             behaviorCard(mc,directory);
             WheelIconClientRegression.run(mc,directory);
+            OneFifteenItemsClientRegression.run(mc,directory);
+            MothArchiveClientRegression.run(mc,directory);
+            TaurToggleClientRegression.run(mc);
+            NativeNameplateClientRegression.run(mc);
+            PartialSkinLayersClientRegression.run(mc);
             System.out.println("OCTOBER18_UI_REGRESSION_PASS: actual roster/QTE screenshots at GUI scales 2 and 3, translated warning and individual adapted-player eyes");
         } finally {
             mc.setScreen(null); TakeoverClientState.clear(); GrabQteOverlayRenderer.endTakeover();
@@ -86,6 +92,40 @@ final class October18UiRegression {
             model.popPose();RenderSystem.applyModelViewMatrix();RenderSystem.setProjectionMatrix(projection,sorting);
         }
     }
+    private static void untranslatedVocalizations(Minecraft mc) {
+        var config=net.parkabird.changedsynergy.ChangedSynergyClientConfig.CLIENT;
+        boolean old=config.untranslatedVocalizations.get(),overlay=config.telepathicDanmaku.get();
+        var call=Component.translatable("dialogue.changed_synergy.vocalization.canine.neutral.0");
+        var speech=Component.translatable("dialogue.changed_synergy.context.blocked_path");
+        int before=TelepathyDanmakuState.activeLines().size();
+        try {
+            for(boolean enabled:new boolean[]{true,false}) {
+                config.untranslatedVocalizations.set(enabled);
+                for(var line:List.of(call,Component.translatable("message.changed_synergy.npc_dialogue",Component.literal("Wolf"),call),Component.literal("prefix").append(call))) {
+                    var event=new net.minecraftforge.client.event.ClientChatReceivedEvent(null,line,net.minecraft.Util.NIL_UUID);
+                    net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(event);
+                    if(event.isCanceled()==enabled)throw new AssertionError("Wrong animal-call chat visibility");
+                }
+                var translated=new net.minecraftforge.client.event.ClientChatReceivedEvent(null,speech,net.minecraft.Util.NIL_UUID);
+                net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(translated);
+                if(translated.isCanceled())throw new AssertionError("Understood dialogue was hidden");
+            }
+            config.untranslatedVocalizations.set(false);
+            for(boolean danmaku:new boolean[]{true,false}) {
+                config.telepathicDanmaku.set(danmaku);
+                TelepathyDanmakuState.receive(call,Component.literal("Wolf"),call,0xFFFFFF);
+                if(TelepathyDanmakuState.activeLines().size()!=before)throw new AssertionError("Hidden vocalization entered the overlay");
+            }
+            config.telepathicDanmaku.set(true);
+            TelepathyDanmakuState.receive(speech,Component.literal("Wolf"),speech,0xFFFFFF);
+            if(TelepathyDanmakuState.activeLines().size()!=before+1)throw new AssertionError("Translated speech did not enter the overlay");
+            config.untranslatedVocalizations.set(true);
+            TelepathyDanmakuState.receive(call,Component.literal("Wolf"),call,0xFFFFFF);
+            if(TelepathyDanmakuState.activeLines().size()!=before+2)throw new AssertionError("Re-enabled animal-call text is still hidden");
+            System.out.println("VOCALIZATION_VISIBILITY_CLIENT_REGRESSION_PASS: default/enabled and disabled chat, nested arguments, siblings, overlay/chat fallback and unchanged understood speech");
+        } finally { config.untranslatedVocalizations.set(old);config.telepathicDanmaku.set(overlay); }
+    }
+
     private static void gatheringCards(Minecraft mc,java.nio.file.Path directory,
             com.mojang.blaze3d.pipeline.TextureTarget target,int scale)throws Exception {
         var types=net.parkabird.changedsynergy.ai.PlayerOutpostSupplyType.values();

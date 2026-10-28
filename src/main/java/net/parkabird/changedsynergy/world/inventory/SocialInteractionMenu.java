@@ -323,6 +323,7 @@ public final class SocialInteractionMenu extends AbstractContainerMenu
         data.putBoolean("ReservedElsewhere", BondTokenService.reservedElsewhere(creature, player));
         data.putBoolean("Recognized", CreaturePersonality.recognizesBond(creature, player));
         data.putBoolean("CanFriendlyTransfur", VoluntaryBondTransfurService.canOfferFriendly(creature, player));
+        data.putString("SeatAction", net.parkabird.changedsynergy.ai.CompanionSeatingService.action(creature, player));
         return data;
     }
 
@@ -624,6 +625,11 @@ public final class SocialInteractionMenu extends AbstractContainerMenu
                             origin, approach));
             return;
         }
+        if (!negotiation && java.util.Set.of("social_seat", "social_cancel_seat", "social_disembark").contains(command)) {
+            releaseAudience(origin);
+            net.parkabird.changedsynergy.ai.CompanionSeatingService.command(origin, creature, command);
+            return;
+        }
         if (!negotiation && "social_inventory".equals(command)) {
             if (BondedInventoryService.canAccess(origin, creature)) {
                 releaseAudience(origin);
@@ -636,7 +642,7 @@ public final class SocialInteractionMenu extends AbstractContainerMenu
             VoluntaryBondTransfurService.select(creature, origin);
             return;
         }
-        if (!negotiation && !bonded && "social_friendly_transfur".equals(command)) {
+        if (!negotiation && "social_friendly_transfur".equals(command)) {
             VoluntaryBondTransfurService.select(creature, origin, true);
             return;
         }
@@ -744,6 +750,7 @@ public final class SocialInteractionMenu extends AbstractContainerMenu
             }
             case "social_play" -> playTogether(origin);
             case "social_follow" -> {
+                net.parkabird.changedsynergy.ai.CompanionSeatingService.newCommand(creature, origin);
                 if (bonded) {
                     return;
                 }
@@ -932,6 +939,8 @@ public final class SocialInteractionMenu extends AbstractContainerMenu
                             : Cue.SOCIAL_PLAY_HUG_FRIEND);
             return;
         }
+
+        if (net.parkabird.changedsynergy.ai.CreaturePeerInteractionService.invitePlayer(creature, origin)) return;
 
         double currentAngle = Math.atan2(
                 creature.getZ() - origin.getZ(),

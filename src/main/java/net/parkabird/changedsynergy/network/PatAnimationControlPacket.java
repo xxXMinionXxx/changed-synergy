@@ -41,7 +41,8 @@ public record PatAnimationControlPacket(
                 }
                 Entity entity = sender.level().getEntity(packet.targetId);
                 if (entity instanceof LivingEntity target) {
-                    if (packet.triggerReaction) {
+                    boolean playing = net.parkabird.changedsynergy.ai.CreaturePeerInteractionService.isPlaymate(sender, target);
+                    if (!playing && packet.triggerReaction && !PatAnimationService.isContinuous(sender, target)) {
                         SynergyPatService.perform(sender, target, false);
                     }
                     PatAnimationService.refreshContinuous(sender, target);

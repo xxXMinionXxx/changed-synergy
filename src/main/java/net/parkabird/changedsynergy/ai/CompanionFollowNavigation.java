@@ -132,7 +132,6 @@ public final class CompanionFollowNavigation {
             resetProgress();
             return;
         }
-        CompanionOpenDoorGoal.slidePastOpenTrapdoor(mob);
         if (++progressSampleTicks < PROGRESS_SAMPLE_TICKS) {
             return;
         }

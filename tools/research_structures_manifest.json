@@ -1,0 +1,92 @@
+{
+  "water_tower_changed": {
+    "source_filename": "water_tower_changed(1).nbt",
+    "source_sha256": "459acbe1731109d2d56d54d3d216a141f7b021939973dc3301922741ee8857e3",
+    "size": [
+      72,
+      41,
+      64
+    ],
+    "blocks": 30710,
+    "covers": 314,
+    "entities": 63,
+    "changes": {
+      "removed external weathering property": 9,
+      "omitted exterior padding": 162826,
+      "empty chest/barrel receives loot": 29,
+      "swordfish research disc chest": 1,
+      "reviewed structure documents": 8,
+      "supported aquatic laboratory furniture": 2
+    },
+    "output_sha256": "6a971db814b0beeadc1c6cd1db2c10491f88c739b9d89a0775e154232ab5f1e6"
+  },
+  "white_lab_tower": {
+    "source_filename": "white_lab_tower.nbt",
+    "source_sha256": "b469a5b2c46a089c83d00923e1fa968d6ffdb3548e4f34238781b95d59767084",
+    "size": [
+      36,
+      36,
+      36
+    ],
+    "blocks": 24838,
+    "covers": 0,
+    "entities": 0,
+    "changes": {
+      "omitted exterior padding": 21818,
+      "corrected tiered loot table path": 5,
+      "reviewed structure documents": 2
+    },
+    "output_sha256": "50b0b0a3e21299cb9e5b81121716dc9f26f09da061271f0469b669e0b0a0369c"
+  },
+  "red_lab_tower": {
+    "source_filename": "red_lab_tower.nbt",
+    "source_sha256": "322b96900b747f6e38fe8aed1e41364994d370ccd5011c1f4836c401d50d73a7",
+    "size": [
+      45,
+      48,
+      42
+    ],
+    "blocks": 44732,
+    "covers": 0,
+    "entities": 20,
+    "changes": {
+      "omitted exterior padding": 45988,
+      "corrected tiered loot table path": 2,
+      "reviewed structure documents": 2,
+      "replaced remaining Addon equipment/puddles": 9,
+      "removed authored creepers": 6,
+      "removed captured arrows": 4,
+      "moved unsupported paintings onto clear walls": 2,
+      "Crossader hall and ceiling layout revision": 68,
+      "Crossader painting layout revision": 1,
+      "Crossader extra resident cleanup": 6
+    },
+    "output_sha256": "d56973ffe54bebb1de597988457bfe4896f9a8cb14de2951a304827642d6d521",
+    "layout_revision": {
+      "source_filename": "red_lab_tower(1).nbt",
+      "source_sha256": "f6ddd3c0ac1340ea208065256138877322366d945f4af8cffed3723d00f7b9b3",
+      "scope": "latest hall, ceiling, misplaced painting and extra cleanup; existing story, retained inventories, dependency substitutions and unrelated repairs retained; unsupported berry frame removed"
+    }
+  },
+  "green_lab": {
+    "source_filename": "green_lab_tower_fix.nbt",
+    "source_sha256": "491d4841bec7788a72fc7916db8586e8db8a767b27c4cc911eb5a292c432f3a2",
+    "size": [
+      64,
+      28,
+      64
+    ],
+    "blocks": 31973,
+    "covers": 0,
+    "entities": 1,
+    "changes": {
+      "omitted exterior padding": 82715,
+      "removed empty entity record": 1,
+      "replaced saved seat with its occupants": 1,
+      "reviewed structure documents": 6,
+      "dark latex crystal display": 3,
+      "replaced remaining Addon equipment/puddles": 1
+    },
+    "output_sha256": "bd340e5bcb8d3551dafc5372661769f1147d64544a6e3d16b3d55b30cfc50278"
+  }
+}

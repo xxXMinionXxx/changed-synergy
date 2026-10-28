@@ -25,6 +25,7 @@ public final class ChangedSynergyClientConfig {
         public final ForgeConfigSpec.DoubleValue friendlySuitVignetteOpacity;
         public final ForgeConfigSpec.BooleanValue disablePureWhiteVisionOverlays;
         public final ForgeConfigSpec.BooleanValue telepathicDanmaku;
+        public final ForgeConfigSpec.BooleanValue untranslatedVocalizations;
         public final ForgeConfigSpec.DoubleValue popupHeightOffset;
         public final ForgeConfigSpec.DoubleValue danmakuHeightOffset;
         public final ForgeConfigSpec.EnumValue<DialogueDisplayMode>
@@ -34,9 +35,22 @@ public final class ChangedSynergyClientConfig {
         public final ForgeConfigSpec.BooleanValue negotiationNextStepHint;
         public final ForgeConfigSpec.BooleanValue qteAnimations;
         public final ForgeConfigSpec.BooleanValue reducedQteMotion;
+        public final ForgeConfigSpec.BooleanValue reducedUiMotion;
         public final ForgeConfigSpec.BooleanValue exoskeletonHypnosisVisual;
+        public final ForgeConfigSpec.BooleanValue showNativePlayerNames;
 
         private Client(ForgeConfigSpec.Builder builder) {
+            builder.comment("Interface transitions").push("UI MOTION");
+            reducedUiMotion = builder.comment("Reduce interface travel, spring overshoot and stagger. Keep short fades and immediate selection feedback.",
+                            "Client only. Does not change game timers, cooldowns or entity animations.")
+                    .define("ReducedUiMotion", false);
+            builder.pop();
+            builder.comment("Native TrueTransfur player nameplates").push("PLAYER NAMES");
+            showNativePlayerNames = builder.comment("Allow head-name labels for native-origin TrueTransfur players.",
+                            "Disabling this hides only their overhead labels, leaving NPC names, chat, tab lists and social names unchanged.",
+                            "Enabling this still respects TrueTransfur's ordinary name visibility and Instinct-body rules.")
+                    .define("ShowNativePlayerNames", true);
+            builder.pop();
             builder.comment("Optional Changed 0.13-style transfur feedback").push("LEGACY TRANSFUR VISUALS");
             legacyTransfurScreenEffect = builder
                     .comment("Restore the colored transfur mask that grows inward as progress rises.",
@@ -70,6 +84,10 @@ public final class ChangedSynergyClientConfig {
             builder.pop();
 
             builder.comment("Telepathic dialogue presentation").push("TELEPATHY");
+            untranslatedVocalizations = builder
+                    .comment("Show animal-call text when creature speech cannot be understood.",
+                            "Disabling this hides only untranslated vocalizations in chat and dialogue overlays; understood speech and actual sound effects are unchanged.")
+                    .define("UntranslatedVocalizations", true);
             popupHeightOffset = builder.comment("Popup vertical offset as a fraction of screen height. Negative moves up; positive moves down.")
                     .defineInRange("PopupHeightOffset", 0.0D, -0.75D, 0.75D);
             danmakuHeightOffset = builder.comment("Scrolling dialogue vertical offset as a fraction of screen height. Clamped to visible screen bounds.")

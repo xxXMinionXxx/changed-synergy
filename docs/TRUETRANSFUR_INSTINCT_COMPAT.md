@@ -1,6 +1,6 @@
 # TrueTransfur and Instinct Mode
 
-This guide describes **Changed: Synergy 1.1.4** with **TrueTransfur 2.0.0**, the recommended pairing for native identity, roleplay and Instinct-mode interactions. **1.0.1** remains supported for native origins and direct player control. Features involving a separate Instinct body require 2.0.0.
+This guide describes **Changed: Synergy 1.1.5** with **TrueTransfur 2.x**, the supported pairing for native identity, roleplay and Instinct-mode interactions. Compatibility with TrueTransfur **1.0.1** is no longer maintained or tested.
 
 ## Installation
 
@@ -9,7 +9,7 @@ This guide describes **Changed: Synergy 1.1.4** with **TrueTransfur 2.0.0**, the
 - TrueTransfur 2.0.0 also requires **Mixin Args 1.0 or newer** on the server and clients.
 - Changed Addon Plus is optional for these player interactions and companion wrapping.
 
-TrueTransfur 1.0.1 controls the player directly. Version 2.0.0 has a separate visible Instinct body and supports the expanded player-takeover interaction below.
+TrueTransfur 2.x has a separate visible Instinct body and supports the expanded player-takeover interaction below.
 
 ## Identity and control
 

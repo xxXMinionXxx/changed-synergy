@@ -32,8 +32,8 @@ import net.parkabird.changedsynergy.init.ChangedSynergyGameRules;
 @Mod.EventBusSubscriber(modid = ChangedSynergyMod.MOD_ID)
 public final class ServerLoadRegression {
     private static final int ENTITY_COUNT = 64;
-    private static final int WARMUP = 60;
-    private static final int SAMPLES = 200;
+    private static final int WARMUP = Integer.getInteger("changed_synergy.loadWarmup", 60);
+    private static final int SAMPLES = Integer.getInteger("changed_synergy.loadSamples", 200);
     private static Run active;
 
     private static final class Run {
@@ -73,6 +73,13 @@ public final class ServerLoadRegression {
         Run run = new Run(server);
         active = run;
         try {
+            if (Boolean.getBoolean("changed_synergy.loadDisableOptional")) {
+                var config = net.parkabird.changedsynergy.ChangedSynergyConfig.COMMON;
+                config.communityAi.set(false);
+                config.companionWorkAi.set(false);
+                config.ambientSocialAi.set(false);
+                config.enhancedHuntAi.set(false);
+            }
             var level = run.level;
             level.getGameRules().getRule(ChangedSynergyGameRules.NATIVE_ORIGINS).set(false, server);
             level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, server);
@@ -118,6 +125,7 @@ public final class ServerLoadRegression {
             }
             System.out.println("SERVER_LOAD_REGRESSION_BEGIN: idle_dark_group entities=" + ENTITY_COUNT
                     + " warmup=" + WARMUP + " samples=" + SAMPLES
+                    + " optionalDisabled=" + Boolean.getBoolean("changed_synergy.loadDisableOptional")
                     + "; not a measurement of an entire 120-mod pack");
         } catch (ReflectiveOperationException | RuntimeException | Error failure) {
             active = null;

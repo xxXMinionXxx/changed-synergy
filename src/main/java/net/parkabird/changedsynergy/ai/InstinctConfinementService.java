@@ -106,7 +106,7 @@ public final class InstinctConfinementService {
         var packet=new TakeoverStatePacket(session.id,TakeoverStatePacket.INSTINCT,
                 finish?TakeoverStatePacket.FINISHED:session.phase,session.body.getId(),session.human.getId(),(int)Math.max(0,session.until-now),(int)(session.until-session.started),0,
                 session.escapeUsed,session.negotiationUsed,ChangedSynergyConfig.COMMON.takeoverNegotiation.get(),0,session.phase==TakeoverStatePacket.STRUGGLE?session.key:-1,
-                session.sequence,session.progress,12,0,Component.Serializer.toJson(NativeRoleplayService.name(session.owner)));
+                session.sequence,session.progress,12,0,Component.Serializer.toJson(NativeRoleplayService.name(session.owner)),false,0);
         ChangedSynergyNetwork.CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(()->session.body),packet);
         // TT's technical player may not be in the vanilla body tracking set.
         if(session.owner.connection!=null)ChangedSynergyNetwork.CHANNEL.send(PacketDistributor.PLAYER.with(()->session.owner),packet);

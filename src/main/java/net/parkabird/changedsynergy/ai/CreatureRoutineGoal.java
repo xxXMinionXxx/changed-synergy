@@ -72,6 +72,7 @@ public final class CreatureRoutineGoal extends Goal {
     private int shoreTransitionTicks;
     private boolean fishFromWaterFallback;
     private boolean offshoreFishing;
+    private boolean routeFailed;
 
     public CreatureRoutineGoal(ChangedEntity mob) {
         this.mob = mob;
@@ -81,9 +82,10 @@ public final class CreatureRoutineGoal extends Goal {
     @Override
     public boolean canUse() {
         if (!(mob.level() instanceof ServerLevel)
-                || PlayerOutpostService.assigned(mob)
+                || PlayerOutpostService.hasAssignment(mob)
                 || !SynergyPerformanceTracker.featureEnabled(Feature.COMMUNITY)
                 || !CreatureLifeMemory.enabled(mob)
+                || CreatureLifeMemory.role(mob) == GroupRole.WANDERER
                 || !movementAvailable()
                 || mob.level().getGameTime()
                         < CreatureLifeMemory.nextDecisionTick(mob)) {
@@ -129,7 +131,8 @@ public final class CreatureRoutineGoal extends Goal {
     @Override
     public boolean canContinueToUse() {
         return remainingTicks > 0
-                && !PlayerOutpostService.assigned(mob)
+                && CreatureLifeMemory.role(mob) != GroupRole.WANDERER
+                && !PlayerOutpostService.hasAssignment(mob)
                 && SynergyPerformanceTracker.featureEnabled(Feature.COMMUNITY)
                 && CreatureLifeMemory.enabled(mob)
                 && movementAvailable()
@@ -145,6 +148,7 @@ public final class CreatureRoutineGoal extends Goal {
 
     @Override
     public void start() {
+        routeFailed = false;
         repathTicks = 0;
         dwellTicks = 0;
         actionTicks = 0;
@@ -186,15 +190,7 @@ public final class CreatureRoutineGoal extends Goal {
         if (advanceFromWaterOntoFishingStand()) {
             return;
         }
-        double arrival = switch (state) {
-            case GATHERING -> blockTarget != null
-                    ? 3.6D * 3.6D : 3.1D * 3.1D;
-            case MINING -> 3.1D * 3.1D;
-            case TENDING, PLAYING -> 2.7D * 2.7D;
-            case FISHING -> offshoreFishing
-                    ? 2.7D * 2.7D : 1.9D * 1.9D;
-            default -> 1.9D * 1.9D;
-        };
+        double arrival = arrivalDistanceSqr();
         if (mob.distanceToSqr(destination) > arrival) {
             // A failed path is already "done"; retrying it every tick bypasses the throttle.
             if (--repathTicks <= 0) {
@@ -230,7 +226,7 @@ public final class CreatureRoutineGoal extends Goal {
         long now = mob.level().getGameTime();
         CreatureLifeMemory.finishRoutine(mob,
                 resumeCargo
-                        ? now + 10L
+                        ? now + (routeFailed ? 200L : 10L)
                         : now + 80L + mob.getRandom().nextInt(161));
         state = RoutineState.IDLE;
         clearTargets();
@@ -245,6 +241,7 @@ public final class CreatureRoutineGoal extends Goal {
     private RoutineState selectActivity() {
         GroupRole role = CreatureLifeMemory.role(mob);
         return switch (role) {
+            case WANDERER -> RoutineState.IDLE;
             case SCOUT -> RoutineState.SCOUTING;
             case GUARD -> RoutineState.GUARDING;
             case YOUNGSTER -> RoutineState.PLAYING;
@@ -842,9 +839,25 @@ public final class CreatureRoutineGoal extends Goal {
 
     private void moveToDestination() {
         if (destination != null) {
-            mob.getNavigation().moveTo(
-                    destination.x, destination.y, destination.z, speedFor(state));
+            if (mob.distanceToSqr(destination) <= arrivalDistanceSqr()) return;
+            if (!CreatureTaskNavigation.moveTo(mob, BlockPos.containing(destination), 1, speedFor(state))) {
+                if (state == RoutineState.FISHING && !offshoreFishing && fishingSite != null
+                        && CreatureSettlementService.approachesFishingSiteThroughWater(mob)
+                        && mob.distanceToSqr(Vec3.atCenterOf(fishingSite.water())) <= 2.25D) return;
+                routeFailed = true;
+                remainingTicks = 0;
+            }
         }
+    }
+
+    private double arrivalDistanceSqr() {
+        return switch (state) {
+            case GATHERING -> blockTarget != null ? 3.6D * 3.6D : 3.1D * 3.1D;
+            case MINING -> 3.1D * 3.1D;
+            case TENDING, PLAYING -> 2.7D * 2.7D;
+            case FISHING -> offshoreFishing ? 2.7D * 2.7D : 1.9D * 1.9D;
+            default -> 1.9D * 1.9D;
+        };
     }
 
     private double speedFor(RoutineState activity) {

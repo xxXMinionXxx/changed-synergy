@@ -86,14 +86,15 @@ public final class TransfurConsciousness {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onKeepConscious(ProcessTransfur.KeepConsciousEvent event) {
         // Changed does not post this event for an explicitly safe conversion.
-        // Optional infection mods must not silently undo an explicit false rule.
+        // Preserve the explicit rule while allowing Addon's protective totem.
         if (!isKept(event.player)) {
             var player = event.player;
             var item = player.getUseItem().getItem();
             var cause = event.context == null ? null : event.context.cause();
             // Check the actual use action, not just a cause supplied by another
             // entity. A dropped syringe or a thrown flask is not player consent.
-            event.shouldKeepConscious = player.isUsingItem() && event.context != null && event.context.source() == null
+            event.shouldKeepConscious = net.parkabird.changedsynergy.compat.ChangedAddonCompat.hasTransfurTotem(player)
+                    || player.isUsingItem() && event.context != null && event.context.source() == null
                     && ((cause == TransfurCause.SYRINGE || cause == TransfurCause.SYRINGE_LEFT_HAND)
                             && item instanceof net.ltxprogrammer.changed.item.LatexSyringe
                         || cause == TransfurCause.ATE_LATEX && item instanceof net.ltxprogrammer.changed.item.LatexFilledMug
@@ -118,7 +119,9 @@ public final class TransfurConsciousness {
 
     /** Direct secondary conversions bypass Changed's normal survival decision. */
     public static void applyInvoluntaryOutcome(Player player, TransfurVariantInstance<?> instance) {
-        if (!isKept(player)) {
+        if (net.parkabird.changedsynergy.compat.ChangedAddonCompat.hasTransfurTotem(player)) {
+            instance.willSurviveTransfur = true;
+        } else if (!isKept(player)) {
             instance.willSurviveTransfur = false;
             // Changed commits the real death/replacement when progression crosses
             // one. Starting at one would leave a living, non-conscious host forever.

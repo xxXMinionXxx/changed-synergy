@@ -292,11 +292,11 @@ public final class TelepathyDanmakuOverlay {
     }
 
     private static void updateMotion(PopupMotion motion, long now) {
-        long elapsed = Math.max(0L, Math.min(100L, now - motion.lastUpdate));
-        float blend = 1.0F - (float)Math.exp(-elapsed / 190.0D);
-        motion.x = Mth.lerp(blend, motion.x, motion.targetX);
-        motion.y = Mth.lerp(blend, motion.y, motion.targetY);
-        motion.lastUpdate = now;
+        long nanos = now * 1_000_000L;
+        motion.springX.target(motion.targetX, nanos); motion.springY.target(motion.targetY, nanos);
+        if (UiMotion.reduced()) { motion.springX.snap(motion.targetX, nanos); motion.springY.snap(motion.targetY, nanos); }
+        motion.x = (float)motion.springX.value(nanos);
+        motion.y = (float)motion.springY.value(nanos);
     }
 
     private static void renderPopup(
@@ -372,7 +372,7 @@ public final class TelepathyDanmakuOverlay {
     }
 
     private static float smooth(float value) {
-        return value * value * (3.0F - 2.0F * value);
+        return UiMotion.transition(value);
     }
 
     private static final class PopupMotion {
@@ -382,7 +382,7 @@ public final class TelepathyDanmakuOverlay {
         private float y;
         private float targetX;
         private float targetY;
-        private long lastUpdate;
+        private final UiSpring springX, springY;
 
         private PopupMotion(
                 float anchorX,
@@ -396,7 +396,8 @@ public final class TelepathyDanmakuOverlay {
             this.y = y;
             this.targetX = anchorX;
             this.targetY = anchorY;
-            this.lastUpdate = lastUpdate;
+            springX = new UiSpring(x, 24, 1); springY = new UiSpring(y, 24, 1);
+            springX.snap(x, lastUpdate * 1_000_000L); springY.snap(y, lastUpdate * 1_000_000L);
         }
     }
 

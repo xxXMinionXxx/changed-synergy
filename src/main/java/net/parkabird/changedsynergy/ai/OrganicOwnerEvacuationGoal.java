@@ -17,12 +17,15 @@ import net.minecraft.world.entity.ai.util.DefaultRandomPos;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.PacketDistributor;
 import net.parkabird.changedsynergy.dialogue.NpcDialogue;
+import net.parkabird.changedsynergy.dialogue.NpcDialogue.Cue;
 import net.parkabird.changedsynergy.event.LatexSocialEvents;
 import net.parkabird.changedsynergy.compat.ChangedAddonCompat;
 import net.parkabird.changedsynergy.network.ChangedSynergyNetwork;
 import net.parkabird.changedsynergy.network.FriendlySocialHugSyncPacket;
+import net.parkabird.changedsynergy.compat.TrueTransfurCompat;
+import net.minecraft.network.chat.Component;
 
-/** Carries a wounded bonded owner out of an active fight without assimilating them. */
+/** Organic emergency evacuation and non-assimilating intervention after witnessed kin kills. */
 public final class OrganicOwnerEvacuationGoal extends Goal {
     private static final String NEXT_RESCUE = "ChangedSynergyNextOrganicEvacuation";
     private static final double APPROACH_SPEED = 1.0D;
@@ -40,6 +43,8 @@ public final class OrganicOwnerEvacuationGoal extends Goal {
     private final ChangedEntity mob;
     private final CompanionFollowNavigation followNavigation;
     private ServerPlayer owner;
+    private LivingEntity passenger;
+    private boolean kinIntervention;
     private GrabEntityAbilityInstance ability;
     private LivingEntity threat;
     private Vec3 dangerOrigin;
@@ -60,49 +65,59 @@ public final class OrganicOwnerEvacuationGoal extends Goal {
 
     @Override
     public boolean canUse() {
-        if (!net.parkabird.changedsynergy.ChangedSynergyConfig.COMMON.bondedEmergencyRescue.get()
-                || mob.level().isClientSide
-                || !LatexSocialMemory.isOrganic(mob)
-                || HypnosisProfile.isHypnoticCreature(mob)
-                || mob.getPersistentData().getLong(NEXT_RESCUE)
-                        > mob.level().getGameTime()
+        owner = BondedKinIntervention.pendingOwner(mob);
+        kinIntervention = owner != null && BondedKinIntervention.usesEvacuation(mob, owner);
+        if (mob.level().isClientSide
                 || CreatureSocialProfile.isJuvenile(mob)
                 || CreatureSocialProfile.isGrabMechanicExcluded(mob)) {
             return false;
         }
-        owner = LatexSocialMemory.getPetOwner(mob);
-        if (!BondedOwnerDefenseGoal.canProtectOwner(mob, owner)
+        if (!kinIntervention) {
+            if (!net.parkabird.changedsynergy.ChangedSynergyConfig.COMMON.bondedEmergencyRescue.get()
+                    || !LatexSocialMemory.isOrganic(mob) || HypnosisProfile.isHypnoticCreature(mob)
+                    || mob.getPersistentData().getLong(NEXT_RESCUE) > mob.level().getGameTime()) return false;
+            owner = LatexSocialMemory.getPetOwner(mob);
+        }
+        if (owner == null
+                || !kinIntervention && !BondedOwnerDefenseGoal.canProtectOwner(mob, owner)
                 || !owner.isAlive()
-                || BondedSuitService.isRescueGraceActive(owner)
+                || !kinIntervention && BondedSuitService.isRescueGraceActive(owner)
                 || owner.isCreative()
                 || owner.isSpectator()
                 || owner.level() != mob.level()
-                || !LatexSocialMemory.organicRescueMode(mob)
-                        .shouldRescue(owner)
-                || GrabEntityAbility.getGrabber(owner) != null) {
+                || !kinIntervention && !LatexSocialMemory.organicRescueMode(mob).shouldRescue(owner)
+                || TakeoverService.active(owner) || TrueTransfurCompat.isRebirthing(owner)) {
             clearState();
             return false;
         }
+        passenger = TrueTransfurCompat.interactionBody(owner);
+        if (passenger == null || !passenger.isAlive() || passenger.isRemoved() || passenger.level() != mob.level()
+                || GrabEntityAbility.getGrabber(passenger) != null) {clearState();return false;}
         threat = findThreat();
-        if (threat == null) {
+        if (!kinIntervention && threat == null) {
             clearState();
             return false;
         }
+        BondedSuitService.ensureGrabAbility(mob);
         ability = BondedSuitService.ability(mob);
         if (ability == null
                 || ability.grabbedEntity != null) {
             clearState();
             return false;
         }
-        dangerOrigin = threat.position();
+        dangerOrigin = kinIntervention ? passenger.position() : threat.position();
         return true;
     }
 
     @Override
     public boolean canContinueToUse() {
-        if (!net.parkabird.changedsynergy.ChangedSynergyConfig.COMMON.bondedEmergencyRescue.get()
+        if (!(kinIntervention ? BondedKinIntervention.canIntervene(mob, owner)
+                : net.parkabird.changedsynergy.ChangedSynergyConfig.COMMON.bondedEmergencyRescue.get())
                 || finished
                 || owner == null
+                || passenger == null || !passenger.isAlive() || passenger.isRemoved()
+                || passenger != TrueTransfurCompat.interactionBody(owner)
+                || !mob.isAlive() || mob.isRemoved()
                 || !owner.isAlive()
                 || owner.level() != mob.level()
                 || ability == null
@@ -110,14 +125,14 @@ public final class OrganicOwnerEvacuationGoal extends Goal {
             return false;
         }
         if (holding) {
-            return ability.grabbedEntity == owner
-                    && LatexSocialMemory.isOrganicEvacuationActive(mob, owner);
+            return ability.grabbedEntity == passenger
+                    && LatexSocialMemory.isOrganicEvacuationActive(mob, passenger);
         }
-        return LatexSocialMemory.isPetOwner(mob, owner)
-                && BondedOwnerDefenseGoal.canProtectOwner(mob, owner)
+        return (kinIntervention ? BondedKinIntervention.pendingOwner(mob) == owner
+                : BondedOwnerDefenseGoal.canProtectOwner(mob, owner)
                 && !BondedSuitService.isRescueGraceActive(owner)
-                && LatexSocialMemory.organicRescueMode(mob).shouldRescue(owner)
-                && GrabEntityAbility.getGrabber(owner) == null;
+                && LatexSocialMemory.organicRescueMode(mob).shouldRescue(owner))
+                && GrabEntityAbility.getGrabber(passenger) == null;
     }
 
     @Override
@@ -144,24 +159,24 @@ public final class OrganicOwnerEvacuationGoal extends Goal {
         }
         mob.setTarget(null);
         mob.setAggressive(false);
-        mob.getLookControl().setLookAt(owner, 30.0F, 30.0F);
+        mob.getLookControl().setLookAt(passenger, 30.0F, 30.0F);
         LatexSocialEvents.calmTowards(mob, owner);
 
         if (!holding) {
             if (!canContinueToUse()) return;
             followNavigation.tickProgress(
-                    mob.distanceToSqr(owner) > GRAB_REACH_SQR);
+                    mob.distanceToSqr(passenger) > GRAB_REACH_SQR);
             if (mob.getBoundingBox().inflate(0.75D)
-                            .intersects(owner.getBoundingBox())
-                    || mob.distanceToSqr(owner) <= GRAB_REACH_SQR) {
-                if (TakeoverService.canPhysicallyCapture(mob, owner)) {
+                            .intersects(passenger.getBoundingBox())
+                    || mob.distanceToSqr(passenger) <= GRAB_REACH_SQR) {
+                if (TakeoverService.canPhysicallyCapture(mob, passenger)) {
                     beginHold();
                     return;
                 }
             }
             if (--repathTicks <= 0) {
                 repathTicks = 5;
-                followNavigation.moveToward(owner, APPROACH_SPEED);
+                followNavigation.moveToward(passenger, APPROACH_SPEED);
             }
             return;
         }
@@ -230,10 +245,10 @@ public final class OrganicOwnerEvacuationGoal extends Goal {
     private void beginHold() {
         if (owner == null
                 || !owner.isAlive() || owner.level() != mob.level()
-                || BondedSuitService.isRescueGraceActive(owner)
-                || GrabEntityAbility.getGrabber(owner) != null
+                || !kinIntervention && BondedSuitService.isRescueGraceActive(owner)
+                || GrabEntityAbility.getGrabber(passenger) != null
                 || ability == null
-                || !TakeoverService.canPhysicallyCapture(mob, owner)) {
+                || !TakeoverService.canPhysicallyCapture(mob, passenger)) {
             finished = true;
             return;
         }
@@ -247,7 +262,7 @@ public final class OrganicOwnerEvacuationGoal extends Goal {
         ability.grabStrength = 1.0F;
         ability.attackDown = false;
         ability.useDown = false;
-        if (!ability.grabEntity(owner)) {
+        if (!ability.grabEntity(passenger)) {
             LatexSocialMemory.endOrganicEvacuation(mob);
             ChangedAddonCompat.configureFriendlyGrab(ability, false);
             finished = true;
@@ -258,33 +273,36 @@ public final class OrganicOwnerEvacuationGoal extends Goal {
         holdTicks = 0;
         stuckTicks = 0;
         lastProgressPosition = mob.position();
+        if (kinIntervention) BondedKinIntervention.complete(mob);
         Changed.PACKET_HANDLER.send(
                 PacketDistributor.TRACKING_ENTITY.with(() -> mob),
-                new GrabEntityPacket(mob, owner, GrabType.ARMS));
+                new GrabEntityPacket(mob, passenger, GrabType.ARMS));
         ChangedSynergyNetwork.CHANNEL.send(
                 PacketDistributor.PLAYER.with(() -> owner),
                 new FriendlySocialHugSyncPacket(
-                        mob.getId(), owner.getId(), true,
+                        mob.getId(), passenger.getId(), true,
                         WATCHDOG_HOLD_TICKS));
         ChangedSounds.broadcastSound(
                 mob, ChangedSounds.LATEX_GRAB_ENTITY, 0.8F, 0.90F);
-        NpcDialogue.trigger(mob, owner, evacuationCue(true));
+        if (kinIntervention) NpcDialogue.trigger(mob, owner, Cue.BOND_KIN_EVACUATION_START);
+        else NpcDialogue.trigger(mob, owner, evacuationCue(true));
     }
 
     private void finishHold(boolean announce) {
-        if (owner != null && ability != null && ability.grabbedEntity == owner) {
+        if (owner != null && passenger != null && ability != null && ability.grabbedEntity == passenger) {
             ability.attackDown = false;
             ability.useDown = false;
             ability.releaseEntity(false);
             Changed.PACKET_HANDLER.send(
                     PacketDistributor.TRACKING_ENTITY.with(() -> mob),
-                    new GrabEntityPacket(mob, owner, GrabType.RELEASE));
+                    new GrabEntityPacket(mob, passenger, GrabType.RELEASE));
             ChangedSynergyNetwork.CHANNEL.send(
                     PacketDistributor.PLAYER.with(() -> owner),
                     new FriendlySocialHugSyncPacket(
-                            mob.getId(), owner.getId(), false, 0));
+                            mob.getId(), passenger.getId(), false, 0));
             if (announce) {
-                NpcDialogue.trigger(mob, owner, evacuationCue(false));
+                if (kinIntervention) NpcDialogue.trigger(mob, owner, Cue.BOND_KIN_EVACUATION_END);
+                else NpcDialogue.trigger(mob, owner, evacuationCue(false));
             }
         }
         ChangedAddonCompat.configureFriendlyGrab(ability, false);
@@ -342,8 +360,8 @@ public final class OrganicOwnerEvacuationGoal extends Goal {
             return;
         }
         float recovery = CreaturePersonality.bondedRecoveryFraction(mob, owner);
-        if (owner.getHealth() < owner.getMaxHealth()) {
-            owner.heal(Math.max(1.0F, owner.getMaxHealth() * recovery));
+        if (passenger != null && passenger.getHealth() < passenger.getMaxHealth()) {
+            passenger.heal(Math.max(1.0F, passenger.getMaxHealth() * recovery));
         }
         if (mob.getHealth() < mob.getMaxHealth()) {
             mob.heal(Math.max(1.0F, mob.getMaxHealth() * recovery));
@@ -395,6 +413,8 @@ public final class OrganicOwnerEvacuationGoal extends Goal {
     private void clearState() {
         restoreStepHeight();
         owner = null;
+        passenger = null;
+        kinIntervention = false;
         ability = null;
         threat = null;
         dangerOrigin = null;

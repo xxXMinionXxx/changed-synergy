@@ -49,10 +49,23 @@ public final class GrabQteClientRegression {
             check(hold.currentEscapeKey == null && hold.lastEscapeKey == null,
                     "A no-QTE sync still clears the prompt immediately");
             FriendlySocialHugState.update(bee.getId(), player.getId(), true, -100);
-            hold.handleEscape(); hold.tickIdle();
-            check(hold.currentEscapeKey == null && hold.grabStrength == 1
-                            && hold.grabbedEntity == player,
-                    "Locked safe carry retains its lock and ticks safely with key hints enabled");
+            hold.escapeKeyRandom=null;hold.currentEscapeKey=null;
+            GrabQteClientState.receive(new GrabQteSyncPacket(bee.getId(),player.getId(),
+                    KeyReference.MOVE_RIGHT.ordinal(),KeyReference.MOVE_LEFT.ordinal(),7,9821L,12));
+            check(hold.escapeKeyRandom!=null&&hold.currentEscapeKey==KeyReference.MOVE_RIGHT,
+                    "Authoritative sequence recovers a missing native seed during a safe carry");
+            var restored=hold.escapeKeyRandom;var state=(net.parkabird.changedsynergy.ai.GrabEscapeState)hold;
+            check(state.changedSynergy$escapeSeed()==9821L&&state.changedSynergy$escapeDraws()==12,
+                    "Recovered random sequence is at the server position");
+            GrabQteClientState.receive(new GrabQteSyncPacket(bee.getId(),player.getId(),
+                    KeyReference.MOVE_RIGHT.ordinal(),KeyReference.MOVE_LEFT.ordinal(),7,9821L,12));
+            check(hold.escapeKeyRandom==restored,"Heartbeat does not restart an already aligned sequence");
+            var expectedRandom=net.minecraft.util.RandomSource.create(9821L);
+            for(int i=0;i<12;i++)expectedRandom.nextInt(4);
+            check(hold.escapeKeyRandom.nextInt(4)==expectedRandom.nextInt(4),"Recovered native random sequence predicts the same next key");
+            hold.initializeEscape(9821L);bee.tickCount++;hold.handleEscape();hold.tickIdle();
+            check(hold.currentEscapeKey!=null&&hold.grabStrength==1&&hold.grabbedEntity==player,
+                    "Safe carries retain escape QTE with key hints enabled");
             FriendlySocialHugState.update(bee.getId(), player.getId(), false, 0);
             hold.releaseEntity(false);
             check(hold.grabbedEntity == null && !player.noPhysics,

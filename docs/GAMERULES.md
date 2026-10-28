@@ -5,6 +5,11 @@ All 13 boolean rules default to `true`; initial reputation defaults to `0`.
 The same 14 rules appear under **World Rules** in Synergy's configuration page.
 Operators can apply edits with **Done**; other players can inspect server values.
 
+With Synergy installed, Changed's `changed:keepConscious` defaults to `true` for
+new worlds. Existing worlds retain their saved value, including `false`; updating
+the mod does not override it. Use `/gamerule changed:keepConscious` to check the
+current world's value, or `/gamerule changed:keepConscious true` to enable it.
+
 Changed's own `changed:keepConscious` rule also applies to Synergy. When it is
 `false`, forced transfur ends in death instead of starting a takeover, including
 transfur by an Instinct-mode player. Confirmed voluntary friendship/bond transfur,

@@ -30,7 +30,7 @@ public final class TakeoverGuiClientRegression {
                 for (int kind : new int[]{TakeoverStatePacket.NORMAL,TakeoverStatePacket.INSTINCT})
                 for (int phase : kind==TakeoverStatePacket.INSTINCT?new int[]{0,2,6}:new int[] {0, 2, 3, 5, 6}) {
                     TakeoverClientState.receive(new TakeoverStatePacket(id, kind, phase, carrier.getId(), mc.player.getId(),
-                            100, 100, 0, false, false, true, 0, 0, 1, 0, 12, phase == 3 ? .8F : 0, "Carrier"));
+                            100, 100, 0, false, false, true, 0, 0, 1, 0, 12, phase == 3 ? .8F : 0, "Carrier", false, 0));
                     var graphics = new GuiGraphics(mc, mc.renderBuffers().bufferSource());
                     var projection = new org.joml.Matrix4f(RenderSystem.getProjectionMatrix());
                     render.invoke(null, graphics, 0F, width, height); graphics.flush();
@@ -60,7 +60,7 @@ public final class TakeoverGuiClientRegression {
         var before=mc.player.position();var id=java.util.UUID.randomUUID();
         var update=TakeoverClientState.class.getDeclaredMethod("applyExoskeletonMotion",net.minecraft.world.entity.player.Player.class);update.setAccessible(true);
         try {
-            TakeoverClientState.receive(new TakeoverStatePacket(id,TakeoverStatePacket.EXOSKELETON,0,-1,mc.player.getId(),100,100,0,false,false,false,0,0,0,0,1,0,""));
+            TakeoverClientState.receive(new TakeoverStatePacket(id,TakeoverStatePacket.EXOSKELETON,0,-1,mc.player.getId(),100,100,0,false,false,false,0,0,0,0,1,0,"", false, 0));
             TakeoverClientState.receiveExoskeletonMotion(new net.parkabird.changedsynergy.network.ExoskeletonMotionPacket(id,before.x,before.y-1,before.z,.1,-.3,0,0));
             update.invoke(null,mc.player);
             if(Math.abs(mc.player.getY()-(before.y-1))>.0001)throw new AssertionError("Client exoskeleton floats above its authoritative descent height");
@@ -74,11 +74,11 @@ public final class TakeoverGuiClientRegression {
             mc.setCameraEntity(carrier);carrier.setYRot(35);carrier.setXRot(10);
             carrier.yRotO=35;carrier.xRotO=10;
             var id=java.util.UUID.randomUUID();
-            TakeoverClientState.receive(new TakeoverStatePacket(id,0,0,carrier.getId(),mc.player.getId(),100,100,0,false,false,true,0,0,1,0,12,0,"Carrier"));
+            TakeoverClientState.receive(new TakeoverStatePacket(id,0,0,carrier.getId(),mc.player.getId(),100,100,0,false,false,true,0,0,1,0,12,0,"Carrier", false, 0));
             float capturedYaw=mc.player.getYRot(),capturedPitch=mc.player.getXRot();
             mc.options.setCameraType(net.minecraft.client.CameraType.THIRD_PERSON_BACK);
             float start=TakeoverClientState.observationYaw();mc.player.turn(200,100);
-            if(Math.abs(TakeoverClientState.observationYaw()-start-30)>.01||Math.abs(TakeoverClientState.observationPitch()-25)>.01)throw new AssertionError("Third-person turn did not reach independent camera state");
+            if(Math.abs(TakeoverClientState.observationYaw()-start-30)>.01||Math.abs(TakeoverClientState.observationPitch()-25)>.01)throw new AssertionError("Third-person turn did not reach independent camera state: start="+start+", yaw="+TakeoverClientState.observationYaw()+", pitch="+TakeoverClientState.observationPitch()+", locked="+TakeoverClientState.movementLocked()+", free="+TakeoverClientState.freeLook()+", body="+carrier.getYRot()+"/"+carrier.getXRot());
             if(mc.player.getYRot()!=capturedYaw||mc.player.getXRot()!=capturedPitch||carrier.getYRot()!=35||carrier.getXRot()!=10)throw new AssertionError("Observation changed controlled body rotations");
             var camera=mc.gameRenderer.getMainCamera();camera.setup(mc.level,carrier,true,false,1);
             if(Math.abs(camera.getYRot()-65)>.01||Math.abs(camera.getXRot()-25)>.01)throw new AssertionError("Rear camera did not use observation rotation");
@@ -104,7 +104,7 @@ public final class TakeoverGuiClientRegression {
             target.setClearColor(0,0,0,1);
             for(int outcome=0;outcome<3;outcome++) {
                 var state=new TakeoverStatePacket(id,TakeoverStatePacket.NORMAL,TakeoverStatePacket.CONTROLLED,carrier,mc.player.getId(),
-                        1200,1200,outcome,false,false,true,0,0,1,0,12,0,"Carrier");
+                        1200,1200,outcome,false,false,true,0,0,1,0,12,0,"Carrier", false, 0);
                 TakeoverClientState.receive(state);target.clear(Minecraft.ON_OSX);target.bindWrite(true);
                 var graphics=new GuiGraphics(mc,mc.renderBuffers().bufferSource());draw.invoke(null,graphics,width,height,state);graphics.flush();
                 try(var pixels=net.minecraft.client.Screenshot.takeScreenshot(target)) {

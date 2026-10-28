@@ -6,9 +6,19 @@ public interface RadialWheelAnimationAccess {
 
     float changedSynergy$getLayerAlpha();
 
+    float changedSynergy$getFrameHighlight(int slot, boolean selected);
+
     float changedSynergy$getOverallAlpha();
+
+    float changedSynergy$getPanelAlpha();
 
     float changedSynergy$getHorizontalOffset();
 
     int changedSynergy$getViewOffset();
+
+    boolean changedSynergy$canConfirm();
+
+    UiSpring changedSynergy$getHorizontalSpring();
+
+    void changedSynergy$continueSlide(UiSpring horizontal);
 }

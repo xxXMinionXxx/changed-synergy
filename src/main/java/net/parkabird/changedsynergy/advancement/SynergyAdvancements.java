@@ -53,6 +53,13 @@ public final class SynergyAdvancements {
     public static final String BOND_TOKEN = "bond_token";
     public static final String REUNITED_COMPANION = "reunited_companion";
     public static final String PLAYFUL_WARNING = "playful_warning";
+    public static final String CHASE_GAME = "chase_game";
+    public static final String AQUATIC_CHASE = "aquatic_chase";
+    public static final String COMPANION_BOARDING = "companion_boarding";
+    public static final String SPIN_SILK = "spin_silk";
+    public static final String SWORDFISH_RUSH = "swordfish_rush";
+    public static final String VOLUNTARY_TRANSFUR = "voluntary_transfur";
+    public static final String TOTEM_REVERSAL = "totem_reversal";
 
     private SynergyAdvancements() {
     }

@@ -140,6 +140,8 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     implementation fg.deobf("curse.maven:changed-minecraft-mod-661527:${changed_curseforge_file}")
+    // Changed already bundles MixinExtras 0.4.1 at runtime.
+    compileOnly "io.github.llamalad7:mixinextras-common:0.4.1"
     compileOnly fg.deobf("curse.maven:changed-addon-plus-711303:${changed_addon_curseforge_file}")
     compileOnly fg.deobf("curse.maven:curios-309927:${curios_curseforge_file}")
     if (!project.hasProperty('withoutAddon')) {

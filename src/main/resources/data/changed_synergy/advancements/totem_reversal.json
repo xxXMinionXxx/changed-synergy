@@ -1,0 +1,29 @@
+{
+  "parent": "changed_synergy:takeover_breakout",
+  "display": {
+    "icon": {
+      "item": "minecraft:totem_of_undying"
+    },
+    "title": {
+      "translate": "advancement.changed_synergy.totem_reversal.title"
+    },
+    "description": {
+      "translate": "advancement.changed_synergy.totem_reversal.description"
+    },
+    "frame": "goal",
+    "show_toast": true,
+    "announce_to_chat": false,
+    "hidden": false
+  },
+  "criteria": {
+    "complete": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "conditions": [
+    {
+      "type": "forge:mod_loaded",
+      "modid": "changed_addon"
+    }
+  ]
+}

@@ -41,6 +41,8 @@ public final class ArchivePaperRenderer implements AutoCloseable {
     private static final int CAPTURE_WIDTH = 774, CAPTURE_HEIGHT = 1095;
     private static boolean capturing;
     private TextureTarget snapshot;
+    private TextureTarget reverseSnapshot;
+    private boolean reverseCaptured;
     private int fromCategory = -1, toCategory = -1;
     private boolean turnCaptured;
     private double turnProgress;
@@ -168,8 +170,13 @@ public final class ArchivePaperRenderer implements AutoCloseable {
 
     /** Snapshot once per turn. GUI clipping helpers can recognize this paper-sized framebuffer. */
     public void capture(Minecraft minecraft, Consumer<GuiGraphics> content) {
+        capture(minecraft, content, null);
+    }
+
+    public void capture(Minecraft minecraft, Consumer<GuiGraphics> content, Consumer<GuiGraphics> reverseContent) {
         if (capturing) throw new IllegalStateException("Nested archive capture");
         turnCaptured = false;
+        reverseCaptured = false;
         RenderSystem.assertOnRenderThread();
         Matrix4f projection = new Matrix4f(RenderSystem.getProjectionMatrix());
         VertexSorting sorting = RenderSystem.getVertexSorting();
@@ -199,26 +206,32 @@ public final class ArchivePaperRenderer implements AutoCloseable {
             modelView.pushPose();
             try {
                 if (snapshot == null) snapshot = new TextureTarget(CAPTURE_WIDTH, CAPTURE_HEIGHT, true, Minecraft.ON_OSX);
-                RenderSystem.disableScissor();
-                RenderSystem.depthMask(true);
-                RenderSystem.colorMask(true, true, true, true);
-                snapshot.setClearColor(0, 0, 0, 0);
-                snapshot.clear(Minecraft.ON_OSX);
-                snapshot.bindWrite(true);
-                RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0, CAPTURE_WIDTH,
-                        CAPTURE_HEIGHT, 0, 1000, 21000), VertexSorting.ORTHOGRAPHIC_Z);
-                modelView.setIdentity();
-                modelView.translate(0, 0, -11000);
-                RenderSystem.applyModelViewMatrix();
-                RenderSystem.setShaderColor(1, 1, 1, 1);
-                RenderSystem.enableBlend();
-                RenderSystem.defaultBlendFunc();
-                capturing = true;
-                GuiGraphics captureGraphics = new GuiGraphics(minecraft,
-                        MultiBufferSource.immediate(new BufferBuilder(65536)));
-                paper(captureGraphics);
-                content.accept(captureGraphics);
-                captureGraphics.flush();
+                if (reverseContent != null && reverseSnapshot == null)
+                    reverseSnapshot = new TextureTarget(CAPTURE_WIDTH, CAPTURE_HEIGHT, true, Minecraft.ON_OSX);
+                for (int face = 0; face < (reverseContent == null ? 1 : 2); face++) {
+                    TextureTarget target = face == 0 ? snapshot : reverseSnapshot;
+                    RenderSystem.disableScissor();
+                    RenderSystem.depthMask(true);
+                    RenderSystem.colorMask(true, true, true, true);
+                    target.setClearColor(0, 0, 0, 0);
+                    target.clear(Minecraft.ON_OSX);
+                    target.bindWrite(true);
+                    RenderSystem.setProjectionMatrix(new Matrix4f().setOrtho(0, CAPTURE_WIDTH,
+                            CAPTURE_HEIGHT, 0, 1000, 21000), VertexSorting.ORTHOGRAPHIC_Z);
+                    modelView.setIdentity();
+                    modelView.translate(0, 0, -11000);
+                    RenderSystem.applyModelViewMatrix();
+                    RenderSystem.setShaderColor(1, 1, 1, 1);
+                    RenderSystem.enableBlend();
+                    RenderSystem.defaultBlendFunc();
+                    capturing = true;
+                    GuiGraphics captureGraphics = new GuiGraphics(minecraft,
+                            MultiBufferSource.immediate(new BufferBuilder(65536)));
+                    paper(captureGraphics);
+                    (face == 0 ? content : reverseContent).accept(captureGraphics);
+                    captureGraphics.flush();
+                }
+                reverseCaptured = reverseContent != null;
                 turnCaptured = true;
             } finally {
                 capturing = false;
@@ -265,9 +278,9 @@ public final class ArchivePaperRenderer implements AutoCloseable {
             mesh(graphics, progress, direction, meshWidth, 0, 0xFFFFFFFF, true);
             if (direction > 0) {
                 mesh(graphics, progress, direction, meshWidth, snapshot.getColorTextureId(), 0xFFFFFFFF, false);
-                mesh(graphics, progress, direction, meshWidth, paperTexture(), backColor, false);
+                mesh(graphics, progress, direction, meshWidth, reverseCaptured ? reverseSnapshot.getColorTextureId() : paperTexture(), reverseCaptured ? 0xFFFFFFFF : backColor, false);
             } else {
-                mesh(graphics, progress, direction, meshWidth, paperTexture(), backColor, false);
+                mesh(graphics, progress, direction, meshWidth, reverseCaptured ? reverseSnapshot.getColorTextureId() : paperTexture(), reverseCaptured ? 0xFFFFFFFF : backColor, false);
                 mesh(graphics, progress, direction, meshWidth, snapshot.getColorTextureId(), 0xFFFFFFFF, false);
             }
             if (from != to) {
@@ -339,6 +352,7 @@ public final class ArchivePaperRenderer implements AutoCloseable {
     private void mesh(GuiGraphics graphics, double progress, int direction, double meshWidth,
                       int texture, int tint, boolean shadow) {
         boolean frontTexture = texture != 0 && texture == snapshot.getColorTextureId();
+        boolean reverseTexture = reverseCaptured && texture == reverseSnapshot.getColorTextureId();
         RenderSystem.setShader(shadow ? GameRenderer::getPositionColorShader : GameRenderer::getPositionTexColorShader);
         if (!shadow) RenderSystem.setShaderTexture(0, texture);
         BufferBuilder buffer = Tesselator.getInstance().getBuilder();
@@ -352,23 +366,23 @@ public final class ArchivePaperRenderer implements AutoCloseable {
                 boolean front = normal((x0 + x1) * .5, (y0 + y1) * .5, meshWidth, progress, direction) >= 0;
                 if (!shadow && frontTexture != (front && (x0 + x1) * .5 >= 22)) continue;
                 int faceTint = front && !frontTexture ? 0xFFFFFFFF : tint;
-                meshVertex(buffer, matrix, x0, y0, meshWidth, progress, direction, faceTint, shadow, frontTexture);
-                meshVertex(buffer, matrix, x0, y1, meshWidth, progress, direction, faceTint, shadow, frontTexture);
-                meshVertex(buffer, matrix, x1, y1, meshWidth, progress, direction, faceTint, shadow, frontTexture);
-                meshVertex(buffer, matrix, x1, y0, meshWidth, progress, direction, faceTint, shadow, frontTexture);
+                meshVertex(buffer, matrix, x0, y0, meshWidth, progress, direction, faceTint, shadow, frontTexture, reverseTexture);
+                meshVertex(buffer, matrix, x0, y1, meshWidth, progress, direction, faceTint, shadow, frontTexture, reverseTexture);
+                meshVertex(buffer, matrix, x1, y1, meshWidth, progress, direction, faceTint, shadow, frontTexture, reverseTexture);
+                meshVertex(buffer, matrix, x1, y0, meshWidth, progress, direction, faceTint, shadow, frontTexture, reverseTexture);
             }
         }
         BufferUploader.drawWithShader(buffer.end());
     }
 
     private static void meshVertex(BufferBuilder buffer, Matrix4f matrix, double x, double y, double meshWidth,
-                                   double progress, int direction, int tint, boolean shadow, boolean front) {
+                                   double progress, int direction, int tint, boolean shadow, boolean front, boolean reverse) {
         Point point = ArchiveGeometry.curl(x, y, meshWidth, progress, direction);
         int color = shadow ? (int) (46 * Math.sin(progress * Math.PI)) << 24
                 : shade(tint, .8 + .2 * Math.abs(normal(x, y, meshWidth, progress, direction)));
         var vertex = buffer.vertex(matrix, (float) (point.x() + (shadow ? 3 : 0)),
                 (float) (point.y() + (shadow ? 4 : 0)), 0);
-        if (!shadow) vertex.uv((float) (x / PAPER_W), (float) (front ? 1 - y : y));
+        if (!shadow) vertex.uv((float) (reverse ? 1 - x / PAPER_W : x / PAPER_W), (float) (front || reverse ? 1 - y : y));
         vertex.color(color >>> 16 & 255, color >>> 8 & 255, color & 255, color >>> 24).endVertex();
     }
 
@@ -519,6 +533,7 @@ public final class ArchivePaperRenderer implements AutoCloseable {
             try {
                 snapshot.destroyBuffers();
                 snapshot = null;
+                if (reverseSnapshot != null) { reverseSnapshot.destroyBuffers(); reverseSnapshot = null; }
             } finally {
                 GL30.glBindFramebuffer(GL30.GL_DRAW_FRAMEBUFFER, draw);
                 GL30.glBindFramebuffer(GL30.GL_READ_FRAMEBUFFER, read);

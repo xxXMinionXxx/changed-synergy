@@ -244,9 +244,9 @@ public final class PlayerOutpostMenu extends AbstractContainerMenu {
     private static int countStock(ServerLevel level, BlockPos pos) {
         Container container = PlayerOutpostData.container(level, pos);
         if (container == null) return -1;
-        int count = 0;
+        long count = 0;
         for (int slot = 0; slot < container.getContainerSize(); slot++) count += container.getItem(slot).getCount();
-        return count;
+        return (int)Math.min(Integer.MAX_VALUE, count);
     }
 
     private static Entity loaded(ServerPlayer player, UUID id) {

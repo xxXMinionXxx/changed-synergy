@@ -66,12 +66,10 @@ public final class ChangedVanillaCompat {
                 || !LatexSocialMemory.isSocialLatex(source)) {
             return false;
         }
-        ResourceLocation sourceId = ForgeRegistries.ENTITY_TYPES.getKey(source.getType());
         if (ChangedSynergyConfig.COMMON.changedVanillaRelationshipAnimalProtection.get()
-                && sourceId != null && MOD_ID.equals(sourceId.getNamespace())
                 && animal instanceof Animal
                 && net.parkabird.changedsynergy.ai.CreaturePersonality
-                        .hasAnyEstablishedRelationship(source)) {
+                        .hasAnyFamiliarRelationship(source)) {
             return true;
         }
         if (!CONVERTIBLE_ANIMALS.contains(animal.getType())) return false;

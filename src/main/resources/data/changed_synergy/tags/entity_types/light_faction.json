@@ -65,6 +65,9 @@
     {
       "id": "changedvanilla:latex_zombie",
       "required": false
-    }
+    },
+    "changed_synergy:latex_silk_moth",
+    "changed_synergy:latex_muntjac",
+    "changed_synergy:latex_muntjac_female"
   ]
 }

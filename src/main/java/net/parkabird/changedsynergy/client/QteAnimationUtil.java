@@ -15,7 +15,7 @@ public final class QteAnimationUtil {
     }
 
     public static boolean reducedMotion() {
-        return ChangedSynergyClientConfig.CLIENT.reducedQteMotion.get();
+        return UiMotion.reduced() || ChangedSynergyClientConfig.CLIENT.reducedQteMotion.get();
     }
 
     public static long now() {
@@ -30,20 +30,15 @@ public final class QteAnimationUtil {
     }
 
     public static float smooth(float value) {
-        float clamped = clamp(value);
-        return clamped * clamped * (3.0F - 2.0F * clamped);
+        return UiMotion.transition(value);
     }
 
     public static float easeOutCubic(float value) {
-        float remaining = 1.0F - clamp(value);
-        return 1.0F - remaining * remaining * remaining;
+        return UiMotion.transition(value);
     }
 
     public static float easeOutBack(float value) {
-        float shifted = clamp(value) - 1.0F;
-        float overshoot = 1.70158F;
-        return 1.0F + (overshoot + 1.0F) * shifted * shifted * shifted
-                + overshoot * shifted * shifted;
+        return value >= 1 ? 1 : UiSpring.response(clamp(value) * 0.24);
     }
 
     public static float clamp(float value) {

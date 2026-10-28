@@ -37,13 +37,13 @@ public abstract class TakeoverPlayerAbsorptionMixin {
             return;
         }
         if (!(target instanceof ServerPlayer player)
-                || !net.parkabird.changedsynergy.ai.TransfurConsciousness.isKept(player)
                 || decision == null
                 || callback.getReturnValue() == null
                 || decision.context().source() == null) return;
         LivingEntity source = decision.context().source().map(
                 IAbstractChangedEntity::getEntity, ILatexAssimilatedEntity::getEntity);
         if (!(source instanceof ChangedEntity carrier)) return;
+        if (!TakeoverService.allowsOrdinaryWithCurrentRule(carrier, player)) return;
         if (net.parkabird.changedsynergy.ai.InstinctConfinementService.protectsHumanForm(carrier, player)) {
             // TT's visible player body can use either replication or absorption.
             // Both must retain normal progress and share the safe final suit path.

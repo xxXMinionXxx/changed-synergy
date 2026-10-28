@@ -32,7 +32,8 @@ public final class CreatureLifeMemory {
         SCOUT("scout"),
         GUARD("guard"),
         PROVISIONER("provisioner"),
-        YOUNGSTER("youngster");
+        YOUNGSTER("youngster"),
+        WANDERER("wanderer");
 
         private final String id;
 
@@ -56,7 +57,7 @@ public final class CreatureLifeMemory {
             }
             // World-save migration from the former nine-role prototype.
             return switch (normalized) {
-                case "lookout", "coordinator", "wanderer" -> SCOUT;
+                case "lookout", "coordinator" -> SCOUT;
                 case "forager", "caretaker", "courier" -> PROVISIONER;
                 default -> null;
             };
@@ -131,6 +132,19 @@ public final class CreatureLifeMemory {
         boolean fresh = !life.contains(VERSION, Tag.TAG_INT);
         HunterFaction faction = HunterFaction.of(mob);
 
+        if (life.getInt(VERSION) < CURRENT_VERSION && !wandererOnly(mob)
+                && GroupRole.WANDERER.id().equals(life.getString(ROLE))) {
+            life.putString(ROLE, GroupRole.SCOUT.id());
+        }
+
+        if (wandererOnly(mob) && !GroupRole.WANDERER.id().equals(life.getString(ROLE))) {
+            life.putString(ROLE, GroupRole.WANDERER.id());
+            life.putString(ROUTINE, RoutineState.IDLE.id());
+            life.putInt(ROLE_STAT_0, 0);
+            life.putInt(ROLE_STAT_1, 0);
+            life.putInt(ROLE_STAT_2, 0);
+        }
+
         if (fresh || !life.contains(ROLE, Tag.TAG_STRING)) {
             life.putString(ROLE, assignRole(mob, faction).id());
         }
@@ -167,7 +181,7 @@ public final class CreatureLifeMemory {
     public static GroupRole role(ChangedEntity mob) {
         ensure(mob);
         CompoundTag life = data(mob);
-        GroupRole role = GroupRole.fromId(life.getString(ROLE));
+        GroupRole role = wandererOnly(mob) ? GroupRole.WANDERER : GroupRole.fromId(life.getString(ROLE));
         if (role == null) {
             role = assignRole(mob, HunterFaction.of(mob));
         }
@@ -179,6 +193,7 @@ public final class CreatureLifeMemory {
 
     public static void setRole(ChangedEntity mob, GroupRole role) {
         ensure(mob);
+        if (wandererOnly(mob)) role = GroupRole.WANDERER;
         CompoundTag life = data(mob);
         GroupRole previous = GroupRole.fromId(life.getString(ROLE));
         life.putString(ROLE, role.id());
@@ -249,6 +264,7 @@ public final class CreatureLifeMemory {
     private static GroupRole assignRole(
             ChangedEntity mob,
             HunterFaction faction) {
+        if (wandererOnly(mob)) return GroupRole.WANDERER;
         if (CreatureSocialProfile.isJuvenile(mob)) {
             return GroupRole.YOUNGSTER;
         }
@@ -302,6 +318,11 @@ public final class CreatureLifeMemory {
             case PLAYFUL -> choose(variation,
                     GroupRole.SCOUT, GroupRole.PROVISIONER, GroupRole.GUARD);
         };
+    }
+
+    private static boolean wandererOnly(ChangedEntity mob) {
+        return mob.getType() == net.ltxprogrammer.changed.init.ChangedEntities.MILK_PUDDING.get()
+                || mob.getType() == net.ltxprogrammer.changed.init.ChangedEntities.FERAL_LATEX_SHARK.get();
     }
 
     private static GroupRole choose(
